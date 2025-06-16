@@ -1,114 +1,126 @@
-import { createContext, useState, useContext, useEffect } from "react";
-import { AuthContext } from "./AuthContext";
-import toast from "react-hot-toast";
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import axios from 'axios';
+import { AuthContext } from './AuthContext';
+import { translateMessage } from '../src/lib/translate';
 
 export const ChatContext = createContext();
 
 export const ChatProvider = ({ children }) => {
-  const [allMessages, setAllMessages] = useState({});
-  const [users, setUsers] = useState([]);
+  const { authUser, token, socket } = useContext(AuthContext);
+
   const [selectedUser, setSelectedUser] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [users, setUsers] = useState([]);
   const [unseenMessages, setUnseenMessages] = useState({});
+  const [onlineUsers, setOnlineUsers] = useState([]);
 
-  const { socket, axios } = useContext(AuthContext);
-
-  // Fetch user list and unseen counts
   const getUsers = async () => {
     try {
-      const { data } = await axios.get("/api/messages/users");
-      if (data.success) {
-        setUsers(data.users);
-        setUnseenMessages(data.unseenMessages);
-      }
-    } catch (error) {
-      toast.error(error.message);
+      const res = await axios.get('/api/message/users', {
+        headers: { token },
+      });
+      setUsers(res.data.users);
+      setUnseenMessages(res.data.unseenMessages || {});
+    } catch (err) {
+      console.error('getUsers error:', err.message);
     }
   };
 
-  // Fetch full message history with a specific user
-  const getMessages = async (userId) => {
+  const getMessages = async (otherUserId) => {
     try {
-      const { data } = await axios.get(`/api/messages/${userId}`);
-      if (data.success) {
-        setAllMessages((prev) => ({ ...prev, [userId]: data.messages }));
-      }
+      const res = await axios.get(`/api/message/${otherUserId}`, {
+        headers: { token },
+      });
+      setMessages(res.data.messages);
     } catch (error) {
-      toast.error(error.message);
+      console.error('Fetching messages failed:', error);
     }
   };
 
-  // Send message to currently selected user
-  const sendMessage = async (messageData) => {
-    try {
-      if (!selectedUser?._id) return;
+  const sendMessage = async ({ text = '', image = '' }) => {
+    if (!selectedUser) return;
 
-      const { data } = await axios.post(
-        `/api/messages/send/${selectedUser._id}`,
-        messageData
+    try {
+      const res = await axios.post(
+        `/api/message/send/${selectedUser._id}`,
+        { text, image },
+        { headers: { token } }
       );
 
-      if (data.success) {
-        setAllMessages((prev) => ({
-          ...prev,
-          [selectedUser._id]: [...(prev[selectedUser._id] || []), data.newMessage],
-        }));
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error(error.message);
+      const newMessage = res.data.newMessage;
+      setMessages((prev) => [...prev, newMessage]); // sender sees original
+      socket?.emit('send-message', newMessage);
+    } catch (err) {
+      console.error('SendMessage Error:', err.message);
     }
-  };
-
-  // Listen to socket.io for new incoming messages
-  const subscribeToMessages = () => {
-    if (!socket) return;
-
-    socket.on("newMessage", (newMessage) => {
-      const senderId = newMessage.senderId;
-      const isCurrent = selectedUser && selectedUser._id === senderId;
-
-      // If user is currently chatting with sender, mark message as seen
-      if (isCurrent) {
-        newMessage.seen = true;
-        axios.put(`/api/messages/mark/${newMessage._id}`);
-      }
-
-      // Add new message to the correct conversation
-      setAllMessages((prev) => ({
-        ...prev,
-        [senderId]: [...(prev[senderId] || []), newMessage],
-      }));
-
-      // Update unseen count if not currently viewing that chat
-      if (!isCurrent) {
-        setUnseenMessages((prev) => ({
-          ...prev,
-          [senderId]: (prev[senderId] || 0) + 1,
-        }));
-      }
-    });
   };
 
   useEffect(() => {
-    subscribeToMessages();
-    return () => socket?.off("newMessage");
-  }, [socket, selectedUser]);
+    if (authUser && socket) {
+      socket.emit('add-user', authUser._id);
+    }
+  }, [authUser, socket]);
 
-  const value = {
-    messages: selectedUser ? allMessages[selectedUser._id] || [] : [],
-    users,
-    selectedUser,
-    getUsers,
-    getMessages,
-    sendMessage,
-    setSelectedUser,
-    unseenMessages,
-    setUnseenMessages,
-  };
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleIncomingMessage = async (msg) => {
+      const isSender = msg.senderId === authUser._id;
+
+      if (isSender) {
+        setMessages((prev) => [...prev, msg]); // sender sees as-is
+        return;
+      }
+
+      try {
+        const translated = await translateMessage(
+          msg.text,
+          msg.language || selectedUser?.language || 'en',
+          authUser.language
+        );
+
+        const finalMessage = { ...msg, text: translated };
+
+        if (msg.senderId === selectedUser?._id) {
+          setMessages((prev) => [...prev, finalMessage]);
+        } else {
+          setUnseenMessages((prev) => ({
+            ...prev,
+            [msg.senderId]: (prev[msg.senderId] || 0) + 1,
+          }));
+        }
+      } catch (error) {
+        console.error('Translation failed:', error.message);
+        if (msg.senderId === selectedUser?._id) {
+          setMessages((prev) => [...prev, msg]); // fallback to original
+        }
+      }
+    };
+
+    socket.on('newMessage', handleIncomingMessage);
+    socket.on('getOnlineUsers', setOnlineUsers);
+
+    return () => {
+      socket.off('newMessage', handleIncomingMessage);
+      socket.off('getOnlineUsers');
+    };
+  }, [selectedUser, socket, authUser]);
 
   return (
-    <ChatContext.Provider value={value}>
+    <ChatContext.Provider
+      value={{
+        selectedUser,
+        setSelectedUser,
+        messages,
+        sendMessage,
+        getMessages,
+        getUsers,
+        users,
+        unseenMessages,
+        setUnseenMessages,
+        onlineUsers,
+      }}
+    >
       {children}
     </ChatContext.Provider>
   );

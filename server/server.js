@@ -2,52 +2,65 @@ import express from "express";
 import "dotenv/config";
 import cors from "cors";
 import http from "http";
-import { connectDB } from "./lib/db.js";
-import userRouter from "./routes/userRoutes.js";
-import messageRouter from "./routes/messageRoute.js";
 import { Server } from "socket.io";
 
-// Create Express app and HTTP server
+import { connectDB } from "./lib/db.js";
+import userRouter from "./routes/userRoutes.js";
+import messageRoutes from "./routes/messageRoute.js";
+import translateRoute from "./routes/translateRoute.js";
+
 const app = express();
 const server = http.createServer(app);
 
-// Initialize socket.io server
+// Socket setup
 export const io = new Server(server, {
-  cors: { origin: "*" },
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
 });
 
-// Store online users
-export const userSocketMap = {}; // { userId: socketId }
+export const userSocketMap = {};
 
 io.on("connection", (socket) => {
   const userId = socket.handshake.query.userId;
-  console.log("User Connected:", userId);
+  console.log("✅ User connected:", userId);
 
   if (userId) {
     userSocketMap[userId] = socket.id;
-    // Emit updated online users to all
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
   }
 
+  socket.on("send-message", (msg) => {
+    const receiverSocketId = userSocketMap[msg.receiverId];
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("newMessage", msg);
+    }
+  });
+
   socket.on("disconnect", () => {
-    console.log("User Disconnected:", userId);
     delete userSocketMap[userId];
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
   });
 });
 
 // Middleware
-app.use(express.json({ limit: "4mb" }));
 app.use(cors());
+app.use(express.json({ limit: "4mb" }));
 
 // Routes
 app.use("/api/status", (req, res) => res.send("Server is live"));
 app.use("/api/auth", userRouter);
-app.use("/api/messages", messageRouter);
+app.use("/api/message", messageRoutes);
+app.use("/api/translate", translateRoute);
 
-// Connect DB and start server
-await connectDB();
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log("Server running on PORT:", PORT);
-});
+// Start server
+const start = async () => {
+  await connectDB();
+  const PORT = process.env.PORT || 5000;
+  server.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+  });
+};
+
+start();

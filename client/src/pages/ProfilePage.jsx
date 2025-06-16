@@ -5,10 +5,9 @@ import { AuthContext } from '../../context/AuthContext';
 
 const ProfilePage = () => {
   const { authUser, updateProfile } = useContext(AuthContext);
-
   const [selectedImg, setSelectedImg] = useState(null);
-  const [name, setName] = useState(authUser.fullName);
-  const [bio, setBio] = useState(authUser.bio);
+  const [name, setName] = useState(authUser.fullName || '');
+  const [bio, setBio] = useState(authUser.bio || '');
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -49,7 +48,7 @@ const ProfilePage = () => {
                   ? URL.createObjectURL(selectedImg)
                   : authUser?.profilePic || assets.avatar_icon
               }
-              alt=""
+              alt="avatar"
               className="w-12 h-12 rounded-full"
             />
             Upload profile image
@@ -73,6 +72,10 @@ const ProfilePage = () => {
             rows={4}
           ></textarea>
 
+          <p className="text-sm text-gray-400 -mt-2">
+            Preferred Language: <span className="text-white font-medium">{authUser?.language?.toUpperCase() || 'Not set'}</span>
+          </p>
+
           <button
             type="submit"
             className="bg-gradient-to-r from-purple-400 to-violet-600 text-white p-2 rounded-full text-lg cursor-pointer"
@@ -88,7 +91,7 @@ const ProfilePage = () => {
               ? URL.createObjectURL(selectedImg)
               : authUser?.profilePic || assets.logo_icon
           }
-          alt=""
+          alt="Profile"
         />
       </div>
     </div>

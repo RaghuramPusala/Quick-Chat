@@ -4,14 +4,14 @@ import {
   getMessages,
   getUsersForSidebar,
   markMessageAsSeen,
-  sendMessage, // ✅ added
+  sendMessage,
 } from "../controllers/messageController.js";
 
-const messageRouter = express.Router();
+const router = express.Router();
 
-messageRouter.get("/users", protectRoute, getUsersForSidebar);
-messageRouter.get("/:id", protectRoute, getMessages);
-messageRouter.put("/mark/:id", protectRoute, markMessageAsSeen);
-messageRouter.post("/send/:id", protectRoute, sendMessage); // ✅ no space
+router.get("/users", protectRoute, getUsersForSidebar);
+router.get("/:id", protectRoute, getMessages);
+router.put("/mark/:id", protectRoute, markMessageAsSeen);
+router.post("/send/:id", protectRoute, sendMessage);
 
-export default messageRouter;
+export default router;

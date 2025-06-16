@@ -3,7 +3,6 @@ import axios from "axios";
 import { io } from "socket.io-client";
 import { toast } from "react-hot-toast";
 
-// Backend base URL
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
 axios.defaults.baseURL = backendUrl;
 
@@ -15,17 +14,17 @@ export const AuthProvider = ({ children }) => {
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [socket, setSocket] = useState(null);
 
+  // ✅ Connect and expose socket globally
   const connectSocket = (userData) => {
     if (!userData || socket?.connected) return;
 
     const newSocket = io(backendUrl, {
-      query: {
-        userId: userData._id,
-      },
+      query: { userId: userData._id },
     });
 
     newSocket.connect();
     setSocket(newSocket);
+    window.socket = newSocket; // ✅ expose socket for DevTools testing
 
     newSocket.on("getOnlineUsers", (userIds) => {
       setOnlineUsers(userIds);
@@ -55,11 +54,10 @@ export const AuthProvider = ({ children }) => {
     try {
       const { data } = await axios.post(`/api/auth/${state}`, credentials);
       if (data.success) {
-        setAuthUser(data.userData);
-        connectSocket(data.userData);
-        axios.defaults.headers.common["token"] = data.token;
         setToken(data.token);
         localStorage.setItem("token", data.token);
+        axios.defaults.headers.common["token"] = data.token;
+        await checkAuth(); // ✅ re-fetch full user
         toast.success(data.message);
       }
     } catch (error) {
@@ -73,7 +71,7 @@ export const AuthProvider = ({ children }) => {
     setAuthUser(null);
     setOnlineUsers([]);
     axios.defaults.headers.common["token"] = null;
-    socket?.disconnect(); // ✅ disconnect socket
+    socket?.disconnect();
     toast.success("Logged out successfully");
   };
 
@@ -92,16 +90,14 @@ export const AuthProvider = ({ children }) => {
   const value = {
     axios,
     authUser,
+    setAuthUser, // ✅ important for LanguageSelect
     onlineUsers,
     socket,
     login,
     logout,
     updateProfile,
+    token,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

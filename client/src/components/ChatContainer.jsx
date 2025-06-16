@@ -62,7 +62,6 @@ const ChatContainer = () => {
     }
   }, [selectedUser]);
 
-  // 🔁 Restore scroll position or scroll to bottom smartly
   useEffect(() => {
     if (!messagesContainerRef.current || !selectedUser) return;
 
@@ -72,11 +71,13 @@ const ChatContainer = () => {
     const shouldRestore =
       container.scrollHeight - container.scrollTop - container.clientHeight > 200;
 
-    if (shouldRestore) {
-      container.scrollTop = lastScroll;
-    } else if (isUserAtBottom) {
-      scrollToBottom();
-    }
+    setTimeout(() => {
+      if (shouldRestore) {
+        container.scrollTop = lastScroll;
+      } else if (isUserAtBottom) {
+        scrollToBottom();
+      }
+    }, 0);
   }, [messages]);
 
   return selectedUser ? (
@@ -171,7 +172,7 @@ const ChatContainer = () => {
           <label htmlFor="image">
             <img
               src={assets.gallery_icon}
-              alt=""
+              alt="Upload"
               className="w-5 mr-2 cursor-pointer"
             />
           </label>
@@ -179,7 +180,7 @@ const ChatContainer = () => {
         <img
           onClick={handleSendMessage}
           src={assets.send_button}
-          alt=""
+          alt="Send"
           className="w-7 cursor-pointer"
         />
       </div>
@@ -195,3 +196,4 @@ const ChatContainer = () => {
 };
 
 export default ChatContainer;
+

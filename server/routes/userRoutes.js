@@ -1,5 +1,3 @@
-// server/routes/userRoutes.js
-
 import express from "express";
 import {
   signup,
@@ -7,6 +5,7 @@ import {
   checkAuth,
   updateProfile,
   getAllUsers,
+  setLanguage,
 } from "../controllers/userController.js";
 import { protectRoute } from "../middleware/auth.js";
 
@@ -16,6 +15,7 @@ router.post("/signup", signup);
 router.post("/login", login);
 router.get("/check", protectRoute, checkAuth);
 router.put("/update-profile", protectRoute, updateProfile);
-router.get("/users", protectRoute, getAllUsers); // ✅ route for getting all users
+router.get("/users", protectRoute, getAllUsers);
+router.put("/set-language", protectRoute, setLanguage); // ✅ fixed
 
 export default router;

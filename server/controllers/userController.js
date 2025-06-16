@@ -3,17 +3,16 @@ import bcrypt from "bcryptjs";
 import { generateToken } from "../lib/utils.js";
 import cloudinary from "../lib/cloudinary.js";
 
-// Signup a new user
+// ✅ Signup a new user with language support
 export const signup = async (req, res) => {
-  const { fullName, email, password, bio } = req.body;
+  const { fullName, email, password, bio, language } = req.body;
 
   try {
-    if (!fullName || !email || !password || !bio) {
+    if (!fullName || !email || !password || !bio || !language) {
       return res.json({ success: false, message: "Missing Details" });
     }
 
     const user = await User.findOne({ email });
-
     if (user) {
       return res.json({ success: false, message: "Account already exists" });
     }
@@ -26,6 +25,7 @@ export const signup = async (req, res) => {
       email,
       password: hashedPassword,
       bio,
+      language, // ✅ Include language
     });
 
     const token = generateToken(newUser._id);
@@ -42,7 +42,7 @@ export const signup = async (req, res) => {
   }
 };
 
-// Login user
+// ✅ Login user
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -53,7 +53,6 @@ export const login = async (req, res) => {
     }
 
     const isPasswordCorrect = await bcrypt.compare(password, userData.password);
-
     if (!isPasswordCorrect) {
       return res.json({ success: false, message: "Invalid credentials" });
     }
@@ -72,12 +71,12 @@ export const login = async (req, res) => {
   }
 };
 
-// Check auth
+// ✅ Check Auth
 export const checkAuth = (req, res) => {
   res.json({ success: true, user: req.user });
 };
 
-// Update profile
+// ✅ Update Profile
 export const updateProfile = async (req, res) => {
   try {
     const { profilePic, bio, fullName } = req.body;
@@ -110,7 +109,7 @@ export const updateProfile = async (req, res) => {
   }
 };
 
-// ✅ Get all users except current user
+// ✅ Get all users except current
 export const getAllUsers = async (req, res) => {
   try {
     const users = await User.find({ _id: { $ne: req.user._id } }).select("-password");
@@ -121,3 +120,24 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
+// ✅ Set Preferred Language
+export const setLanguage = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { language } = req.body;
+
+    if (!language) {
+      return res.status(400).json({ success: false, message: "Language is required" });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { language },
+      { new: true }
+    );
+
+    res.json({ success: true, user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
