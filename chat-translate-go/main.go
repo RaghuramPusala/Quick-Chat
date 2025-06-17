@@ -21,7 +21,6 @@ type TranslationResponse struct {
 }
 
 func translateHandler(w http.ResponseWriter, r *http.Request) {
-	// ✅ Allow CORS
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Token, token")
@@ -37,12 +36,10 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req TranslationRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
-
 	if req.Q == "" {
 		http.Error(w, "Missing 'q' parameter", http.StatusBadRequest)
 		return
@@ -51,7 +48,13 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 	payloadBytes, _ := json.Marshal(req)
 	bodyReader := bytes.NewReader(payloadBytes)
 
-	resp, err := http.Post("http://localhost:5001/translate", "application/json", bodyReader)
+	// ✅ Use public LibreTranslate for Render
+	translateURL := os.Getenv("TRANSLATE_API_URL")
+	if translateURL == "" {
+		translateURL = "https://translate.argosopentech.com/translate"
+	}
+
+	resp, err := http.Post(translateURL, "application/json", bodyReader)
 	if err != nil {
 		log.Printf("Error contacting LibreTranslate: %v", err)
 		http.Error(w, "Translation service error", http.StatusInternalServerError)
@@ -59,16 +62,15 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		log.Printf("LibreTranslate returned status %d: %s", resp.StatusCode, body)
+		log.Printf("LibreTranslate returned %d: %s", resp.StatusCode, body)
 		http.Error(w, "Translation failed", http.StatusInternalServerError)
 		return
 	}
 
 	var res TranslationResponse
-	err = json.NewDecoder(resp.Body).Decode(&res)
-	if err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
 		http.Error(w, "Failed to parse translation", http.StatusInternalServerError)
 		return
 	}
@@ -78,7 +80,6 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	// ✅ Use PORT from environment or fallback to 8080
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -87,8 +88,7 @@ func main() {
 	http.HandleFunc("/translate", translateHandler)
 
 	log.Printf("✅ Translation server running on port %s", port)
-	err := http.ListenAndServe(":"+port, nil)
-	if err != nil {
-		log.Fatal("❌ Server failed to start:", err)
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
+		log.Fatal("❌ Server failed:", err)
 	}
 }
