@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 )
 
 type TranslationRequest struct {
@@ -77,10 +78,16 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	// ✅ Use PORT from environment or fallback to 8080
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
 	http.HandleFunc("/translate", translateHandler)
 
-	log.Println("✅ Translation server running at port 8080")
-	err := http.ListenAndServe(":8080", nil)
+	log.Printf("✅ Translation server running on port %s", port)
+	err := http.ListenAndServe(":"+port, nil)
 	if err != nil {
 		log.Fatal("❌ Server failed to start:", err)
 	}
