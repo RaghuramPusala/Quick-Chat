@@ -12,7 +12,7 @@ import translateRoute from "./routes/translateRoute.js";
 const app = express();
 const server = http.createServer(app);
 
-// Socket setup
+// Socket.IO setup
 export const io = new Server(server, {
   cors: {
     origin: "*",
@@ -54,19 +54,14 @@ app.use("/api/auth", userRouter);
 app.use("/api/message", messageRoutes);
 app.use("/api/translate", translateRoute);
 
-// Start server
+// Start server (✅ required for Render)
 const start = async () => {
   await connectDB();
 
-  if (process.env.NODE_ENV !== "production") {
-    const PORT = process.env.PORT || 5000;
-    server.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT}`);
-    });
-  }
+  const PORT = process.env.PORT || 5000;
+  server.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+  });
 };
 
 start();
-
-// Export for Vercel
-export default server;
