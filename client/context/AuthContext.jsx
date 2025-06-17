@@ -3,7 +3,7 @@ import axios from "axios";
 import { io } from "socket.io-client";
 import { toast } from "react-hot-toast";
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
+const backendUrl = import.meta.env.VITE_API_URL; // ✅ Fixed here
 axios.defaults.baseURL = backendUrl;
 
 export const AuthContext = createContext();
@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }) => {
         axios.defaults.headers.common["token"] = data.token;
         await checkAuth();
         toast.success(data.message);
-        return data; // ✅ Required for navigation in LoginPage.jsx
+        return data; // ✅ Needed for navigation
       }
     } catch (error) {
       toast.error(error.message);
