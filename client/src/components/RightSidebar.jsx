@@ -8,7 +8,6 @@ const RightSidebar = () => {
   const { logout, onlineUsers } = useContext(AuthContext);
   const [msgImages, setMsgImages] = useState([]);
 
-  // Extract images only from selected user's messages
   useEffect(() => {
     if (selectedUser) {
       const filtered = messages
@@ -22,7 +21,7 @@ const RightSidebar = () => {
 
   return (
     <div
-      className={`bg-[#8185B2]/10 text-white w-full relative overflow-y-scroll ${
+      className={`bg-white text-gray-800 w-full relative overflow-y-scroll ${
         selectedUser ? 'max-md:hidden' : ''
       }`}
     >
@@ -31,31 +30,29 @@ const RightSidebar = () => {
         <img
           src={selectedUser?.profilePic || assets.avatar_icon}
           alt=""
-          className="w-20 aspect-[1/1] rounded-full mx-auto"
+          className="w-20 aspect-square rounded-full mx-auto"
         />
-        <h1 className="px-10 text-xl font-medium mx-auto flex items-center gap-2">
+        <h1 className="px-10 text-xl font-semibold text-gray-900 flex items-center gap-2">
           {onlineUsers.includes(selectedUser._id) && (
-            <p className="w-2 h-2 rounded-full bg-green-500"></p>
+            <span className="w-2 h-2 rounded-full bg-green-500"></span>
           )}
           {selectedUser.fullName}
         </h1>
-        <p className="px-10 mx-auto text-sm text-gray-300">
-          {selectedUser.bio}
-        </p>
+        <p className="px-10 text-gray-500 text-sm">{selectedUser.bio || 'No bio'}</p>
       </div>
 
       {/* Media Section */}
-      <hr className="border-[#ffffff50] my-4" />
+      <hr className="border-gray-300 my-4" />
       <div className="px-5 text-xs">
-        <p>Media</p>
-        <div className="mt-2 max-h-[200px] overflow-y-scroll grid grid-cols-3 gap-4 opacity-80">
+        <p className="text-gray-700 font-semibold mb-2">Media</p>
+        <div className="max-h-[200px] overflow-y-auto grid grid-cols-3 gap-3">
           {msgImages.map((url, index) => (
             <div
               key={index}
               onClick={() => window.open(url)}
-              className="cursor-pointer rounded"
+              className="cursor-pointer rounded overflow-hidden"
             >
-              <img src={url} alt="" className="h-full rounded-md" />
+              <img src={url} alt="" className="rounded-md" />
             </div>
           ))}
         </div>
@@ -64,7 +61,7 @@ const RightSidebar = () => {
       {/* Logout Button */}
       <button
         onClick={logout}
-        className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-purple-400 to-violet-600 text-white border-none text-sm font-light py-2 px-20 rounded-full cursor-pointer"
+        className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium py-2 px-10 rounded-full shadow-md"
       >
         Logout
       </button>

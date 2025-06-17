@@ -4,6 +4,7 @@ import { ChatContext } from '../../context/ChatContext';
 import { AuthContext } from '../../context/AuthContext';
 import { formatMessage } from '../lib/utils';
 import toast from 'react-hot-toast';
+import loginImage from '../assets/login-illustration.png';
 
 const ChatContainer = () => {
   const {
@@ -81,15 +82,15 @@ const ChatContainer = () => {
   }, [messages]);
 
   return selectedUser ? (
-    <div className="h-full overflow-hidden relative backdrop-blur-lg">
+    <div className="h-full overflow-hidden relative bg-white text-black">
       {/* Header */}
-      <div className="flex items-center gap-3 py-3 mx-4 border-b border-stone-500">
+      <div className="flex items-center gap-3 py-3 px-4 border-b border-gray-200 bg-white">
         <img
           src={selectedUser.profilePic || assets.avatar_icon}
           alt=""
           className="w-8 rounded-full"
         />
-        <p className="flex-1 text-lg text-white flex items-center gap-2">
+        <p className="flex-1 text-black text-base font-medium flex items-center gap-2">
           {selectedUser.fullName}
           {onlineUsers.includes(selectedUser._id) && (
             <span className="w-2 h-2 rounded-full bg-green-500"></span>
@@ -108,59 +109,53 @@ const ChatContainer = () => {
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="flex flex-col h-[calc(100%-120px)] overflow-y-scroll p-3 pb-6"
+        className="flex flex-col h-[calc(100%-120px)] overflow-y-scroll p-4"
       >
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`flex items-end gap-2 justify-end ${
-              msg.senderId !== authUser._id ? 'flex-row-reverse' : ''
-            }`}
-          >
-            {msg.image ? (
-              <img
-                src={msg.image}
-                alt=""
-                className="max-w-[230px] border border-gray-700 rounded-lg overflow-hidden mb-8"
-              />
-            ) : (
-              <p
-                className={`p-2 max-w-[200px] md:text-sm font-light rounded-lg mb-8 break-all bg-violet-500/30 text-white ${
-                  msg.senderId === authUser._id
-                    ? 'rounded-br-none'
-                    : 'rounded-bl-none'
-                }`}
-              >
-                {msg.text}
-              </p>
-            )}
-            <div className="text-center text-xs">
-              <img
-                src={
-                  msg.senderId === authUser._id
-                    ? authUser?.profilePic || assets.avatar_icon
-                    : selectedUser?.profilePic || assets.avatar_icon
-                }
-                alt=""
-                className="w-7 rounded-full"
-              />
-              <p className="text-gray-500">{formatMessage(msg.createdAt)}</p>
+        {messages.map((msg, index) => {
+          const isSender = msg.senderId === authUser._id;
+          return (
+            <div
+              key={index}
+              className={`flex items-end mb-2 ${isSender ? 'justify-end' : 'justify-start'}`}
+            >
+              <div className="max-w-[65%]">
+                {msg.image ? (
+                  <img
+                    src={msg.image}
+                    alt="message"
+                    className="rounded-lg border border-gray-400 mb-1"
+                  />
+                ) : (
+                  <div
+                    className={`px-4 py-2 rounded-lg text-sm break-words ${
+                      isSender
+                        ? 'bg-purple-500 text-white rounded-br-none'
+                        : 'bg-gray-200 text-black rounded-bl-none'
+                    }`}
+                  >
+                    {msg.text}
+                  </div>
+                )}
+                <p className="text-xs text-gray-400 mt-1 text-right">
+                  {formatMessage(msg.createdAt)}
+                </p>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         <div ref={scrollEnd}></div>
       </div>
 
       {/* Input */}
-      <div className="absolute bottom-0 left-0 right-0 flex items-center gap-3 p-3">
-        <div className="flex-1 flex items-center bg-gray-100/12 px-3 rounded-full">
+      <div className="absolute bottom-0 left-0 right-0 bg-white p-3 flex items-center gap-3 border-t border-gray-200">
+        <div className="flex-1 flex items-center bg-gray-100 px-3 py-2 rounded-full">
           <input
             onChange={(e) => setInput(e.target.value)}
             value={input}
             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage(e)}
             type="text"
-            placeholder="Send a message"
-            className="flex-1 text-sm p-3 border-none rounded-lg outline-none text-white placeholder-gray-400"
+            placeholder="Type a message"
+            className="flex-1 bg-transparent text-sm text-black placeholder-gray-500 outline-none border-none"
           />
           <input
             type="file"
@@ -169,12 +164,8 @@ const ChatContainer = () => {
             hidden
             onChange={handleSendImage}
           />
-          <label htmlFor="image">
-            <img
-              src={assets.gallery_icon}
-              alt="Upload"
-              className="w-5 mr-2 cursor-pointer"
-            />
+          <label htmlFor="image" className="cursor-pointer">
+            <img src={assets.gallery_icon} alt="Upload" className="w-5" />
           </label>
         </div>
         <img
@@ -186,9 +177,13 @@ const ChatContainer = () => {
       </div>
     </div>
   ) : (
-    <div className="flex flex-col items-center justify-center gap-2 text-gray-500 bg-white/10 max-md:hidden">
-      <img src={assets.logo_icon} className="max-w-16" alt="" />
-      <p className="text-lg font-medium text-white">
+        <div className="flex flex-col items-center justify-center gap-2 bg-white text-black h-full px-4">
+      <img
+        src={loginImage}
+        className="w-40 opacity-120 hidden md:block"
+        alt="icon"
+      />
+      <p className="text-lg font-medium hidden md:block">
         Chat anytime, anywhere
       </p>
     </div>
@@ -196,4 +191,3 @@ const ChatContainer = () => {
 };
 
 export default ChatContainer;
-

@@ -14,7 +14,6 @@ export const AuthProvider = ({ children }) => {
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [socket, setSocket] = useState(null);
 
-  // ✅ Connect and expose socket globally
   const connectSocket = (userData) => {
     if (!userData || socket?.connected) return;
 
@@ -24,7 +23,7 @@ export const AuthProvider = ({ children }) => {
 
     newSocket.connect();
     setSocket(newSocket);
-    window.socket = newSocket; // ✅ expose socket for DevTools testing
+    window.socket = newSocket;
 
     newSocket.on("getOnlineUsers", (userIds) => {
       setOnlineUsers(userIds);
@@ -57,8 +56,9 @@ export const AuthProvider = ({ children }) => {
         setToken(data.token);
         localStorage.setItem("token", data.token);
         axios.defaults.headers.common["token"] = data.token;
-        await checkAuth(); // ✅ re-fetch full user
+        await checkAuth();
         toast.success(data.message);
+        return data; // ✅ Required for navigation in LoginPage.jsx
       }
     } catch (error) {
       toast.error(error.message);
@@ -90,7 +90,7 @@ export const AuthProvider = ({ children }) => {
   const value = {
     axios,
     authUser,
-    setAuthUser, // ✅ important for LanguageSelect
+    setAuthUser,
     onlineUsers,
     socket,
     login,

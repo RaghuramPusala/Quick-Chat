@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
-import assets from '../assets/assets';
 import { AuthContext } from '../../context/AuthContext';
 import isoLanguages from '../lib/languages';
+import loginImage from '../assets/login-illustration.png';
 
 const LoginPage = () => {
   const [currState, setCurrState] = useState("Sign up");
@@ -23,9 +23,7 @@ const LoginPage = () => {
     }
 
     login(
-      currState === "Sign up"
-        ? 'signup'
-        : 'login',
+      currState === "Sign up" ? 'signup' : 'login',
       currState === "Sign up"
         ? { fullName, email, password, bio, language }
         : { email, password }
@@ -33,129 +31,120 @@ const LoginPage = () => {
   };
 
   return (
-    <div className='min-h-screen bg-gradient-to-br from-violet-900 via-purple-800 to-indigo-900 flex items-center justify-center gap-8 sm:justify-evenly max-sm:flex-col backdrop-blur-2xl px-4'>
-      {/* Left Section */}
-      <img src={assets.logo_big} alt="" className='w-[min(30vw,250px)] drop-shadow-2xl' />
-
-      {/* Right Section */}
-      <form onSubmit={onSubmitHandler} className='bg-white/10 text-white border border-gray-500 p-6 flex flex-col gap-6 rounded-2xl shadow-2xl w-full max-w-md backdrop-blur-xl'>
-
-        {/* Form Heading */}
-        <h2 className='font-semibold text-3xl flex justify-between items-center'>
-          {currState}
-          {isDataSubmitted && (
-            <img
-              onClick={() => setIsDataSubmitted(false)}
-              src={assets.arrow_icon}
-              alt=""
-              className='w-5 cursor-pointer'
-            />
-          )}
-        </h2>
-
-        {/* Full Name */}
-        {currState === "Sign up" && !isDataSubmitted && (
-          <input
-            onChange={(e) => setFullName(e.target.value)}
-            value={fullName}
-            type="text"
-            className='p-3 bg-white/10 border border-gray-600 rounded-lg focus:outline-none placeholder:text-gray-400'
-            placeholder="Full Name"
-            required
+    <div className="min-h-screen bg-white flex items-center justify-center px-4">
+      <div className="w-full max-w-5xl flex flex-col md:flex-row items-center justify-center">
+        
+        {/* Left Image */}
+        <div className="hidden md:flex w-1/2 items-center justify-center p-4">
+          <img
+            src={loginImage}
+            alt="QuickChat"
+            className="max-w-[85%] h-auto"
           />
-        )}
-
-        {/* Email & Password */}
-        {!isDataSubmitted && (
-          <>
-            <input
-              onChange={(e) => setEmail(e.target.value)}
-              value={email}
-              type="email"
-              placeholder="Email Address"
-              required
-              className='p-3 bg-white/10 border border-gray-600 rounded-lg focus:outline-none placeholder:text-gray-400'
-            />
-            <input
-              onChange={(e) => setPassword(e.target.value)}
-              value={password}
-              type="password"
-              placeholder="Password"
-              required
-              className='p-3 bg-white/10 border border-gray-600 rounded-lg focus:outline-none placeholder:text-gray-400'
-            />
-          </>
-        )}
-
-        {/* Bio */}
-        {currState === "Sign up" && isDataSubmitted && (
-          <textarea
-            onChange={(e) => setBio(e.target.value)}
-            value={bio}
-            rows={4}
-            className='p-3 bg-white/10 border border-gray-600 rounded-lg focus:outline-none placeholder:text-gray-400'
-            placeholder='Provide a short bio...'
-            required
-          ></textarea>
-        )}
-
-        {/* Terms & Language Selection */}
-        <div className="flex flex-col gap-3 text-sm text-gray-300">
-          <label className="flex items-center gap-2">
-            <input type="checkbox" required className='accent-violet-600'/>
-            <span>Agree to the terms of use & privacy policy.</span>
-          </label>
-
-          <select
-            required
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-            className="bg-white/10 border border-gray-600 text-white rounded-lg p-2 focus:outline-none"
-          >
-            <option value="" disabled>
-              Select your preferred language
-            </option>
-            {isoLanguages.map((lang) => (
-              <option key={lang.code} value={lang.code} className='text-black'>
-                {lang.name}
-              </option>
-            ))}
-          </select>
         </div>
 
-        {/* Submit Button */}
-        <button type='submit' className='py-3 bg-gradient-to-r from-purple-500 to-indigo-600 hover:opacity-90 transition-opacity text-white font-semibold rounded-lg'>
-          {currState === "Sign up" ? "Create Account" : "Login Now"}
-        </button>
+        {/* Right Form */}
+        <form onSubmit={onSubmitHandler} className="w-full md:w-1/2 max-w-sm px-6 py-10 flex flex-col gap-4 text-sm">
+          <h1 className="text-2xl font-semibold text-center mb-2 text-gray-800">QuickChat</h1>
 
-        {/* Toggle Form */}
-        <div className='text-sm text-gray-300 text-center'>
-          {currState === "Sign up" ? (
-            <p>
-              Already have an account?{' '}
-              <span
-                onClick={() => {
-                  setCurrState("Login");
-                  setIsDataSubmitted(false);
-                }}
-                className="font-medium text-violet-400 hover:underline cursor-pointer"
-              >
-                Login here
-              </span>
-            </p>
-          ) : (
-            <p>
-              Create an account{' '}
-              <span
-                onClick={() => setCurrState("Sign up")}
-                className="font-medium text-violet-400 hover:underline cursor-pointer"
-              >
-                Click here
-              </span>
-            </p>
+          {currState === "Sign up" && !isDataSubmitted && (
+            <input
+              onChange={(e) => setFullName(e.target.value)}
+              value={fullName}
+              type="text"
+              placeholder="Full Name"
+              className="p-2.5 bg-gray-100 border border-gray-300 rounded-md"
+              required
+            />
           )}
-        </div>
-      </form>
+
+          {!isDataSubmitted && (
+            <>
+              <input
+                onChange={(e) => setEmail(e.target.value)}
+                value={email}
+                type="email"
+                placeholder="Email Address"
+                className="p-2.5 bg-gray-100 border border-gray-300 rounded-md"
+                required
+              />
+              <input
+                onChange={(e) => setPassword(e.target.value)}
+                value={password}
+                type="password"
+                placeholder="Password"
+                className="p-2.5 bg-gray-100 border border-gray-300 rounded-md"
+                required
+              />
+            </>
+          )}
+
+          {currState === "Sign up" && (
+            <>
+              {isDataSubmitted && (
+                <textarea
+                  onChange={(e) => setBio(e.target.value)}
+                  value={bio}
+                  rows={3}
+                  placeholder="Write a short bio..."
+                  className="p-2.5 bg-gray-100 border border-gray-300 rounded-md"
+                  required
+                />
+              )}
+
+              <select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+                required
+                className="p-2.5 bg-gray-100 border border-gray-300 rounded-md"
+              >
+                <option value="" disabled>Select your preferred language</option>
+                {isoLanguages.map((lang) => (
+                  <option key={lang.code} value={lang.code}>{lang.name}</option>
+                ))}
+              </select>
+
+              <p className="text-[11px] text-yellow-600 -mt-1">
+                ⚠️ Once selected, you <strong>cannot change</strong> your language later.
+              </p>
+            </>
+          )}
+
+          <button
+            type="submit"
+            className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 rounded-md"
+          >
+            {currState === "Sign up" ? "Create Account" : "Log in"}
+          </button>
+
+          <div className="text-center text-xs text-gray-600">
+            {currState === "Sign up" ? (
+              <p>
+                Already have an account?{' '}
+                <span
+                  onClick={() => {
+                    setCurrState("Login");
+                    setIsDataSubmitted(false);
+                  }}
+                  className="text-purple-600 cursor-pointer hover:underline"
+                >
+                  Log in
+                </span>
+              </p>
+            ) : (
+              <p>
+                Don’t have an account?{' '}
+                <span
+                  onClick={() => setCurrState("Sign up")}
+                  className="text-purple-600 cursor-pointer hover:underline"
+                >
+                  Sign up
+                </span>
+              </p>
+            )}
+          </div>
+        </form>
+      </div>
     </div>
   );
 };

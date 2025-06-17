@@ -1,8 +1,9 @@
+import "dotenv/config"; // must be FIRST!
 import express from "express";
-import "dotenv/config";
 import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
+
 
 import { connectDB } from "./lib/db.js";
 import userRouter from "./routes/userRoutes.js";
