@@ -4,7 +4,6 @@ import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
 
-
 import { connectDB } from "./lib/db.js";
 import userRouter from "./routes/userRoutes.js";
 import messageRoutes from "./routes/messageRoute.js";
@@ -58,10 +57,16 @@ app.use("/api/translate", translateRoute);
 // Start server
 const start = async () => {
   await connectDB();
-  const PORT = process.env.PORT || 5000;
-  server.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-  });
+
+  if (process.env.NODE_ENV !== "production") {
+    const PORT = process.env.PORT || 5000;
+    server.listen(PORT, () => {
+      console.log(`🚀 Server running on http://localhost:${PORT}`);
+    });
+  }
 };
 
 start();
+
+// Export for Vercel
+export default server;

@@ -12,7 +12,7 @@ const App = () => {
   const needsLangSelect = authUser && !authUser.language;
 
   return (
-    <div className="bg-[url('./src/assets/bgImage.svg')] bg-contain min-h-screen">
+    <div className="bg-[url('/bgImage.svg')] bg-contain min-h-screen">
       <Toaster />
       <Routes>
         {/* Home Route */}
