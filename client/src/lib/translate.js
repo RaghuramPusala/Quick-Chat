@@ -1,11 +1,12 @@
-// client/src/lib/translate.js
+
+
 import axios from "axios";
 
-const TRANSLATE_API = import.meta.env.VITE_TRANSLATE_URL;
+const TRANSLATE_URL = import.meta.env.VITE_TRANSLATE_URL;
 
 export const translateMessage = async (text, from, to) => {
   try {
-    const res = await axios.post(`${TRANSLATE_API}/translate`, {
+    const res = await axios.post(`${TRANSLATE_URL}/translate`, {
       q: text,
       source: from,
       target: to,
@@ -17,4 +18,3 @@ export const translateMessage = async (text, from, to) => {
     throw err;
   }
 };
-
