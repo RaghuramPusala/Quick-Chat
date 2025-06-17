@@ -1,6 +1,6 @@
+// client/src/lib/translate.js
 import axios from "axios";
 
-// This URL points to your Go-based LibreTranslate server
 const TRANSLATE_API = import.meta.env.VITE_TRANSLATE_URL;
 
 export const translateMessage = async (text, from, to) => {
@@ -11,11 +11,10 @@ export const translateMessage = async (text, from, to) => {
       target: to,
       format: "text",
     });
-
     return res.data.translatedText;
   } catch (err) {
     console.error("Translation failed:", err.message);
-    return text; // fallback to original message if translation fails
+    throw err;
   }
 };
 
