@@ -42,22 +42,27 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
+
+	// ✅ Debug log: show request content
+	log.Printf("🔄 Incoming translation: q=%s | source=%s | target=%s", req.Q, req.Source, req.Target)
+
 	if req.Q == "" {
 		http.Error(w, "Missing 'q' parameter", http.StatusBadRequest)
 		return
 	}
 
-	// Log the received input
 	log.Printf("➡️ Translating: %q from %s to %s", req.Q, req.Source, req.Target)
 
-	// Marshal to forward to LibreTranslate
+	// Marshal request payload
 	payloadBytes, _ := json.Marshal(req)
 	bodyReader := bytes.NewReader(payloadBytes)
 
-	// Get LibreTranslate URL from env or use public fallback
+	// ✅ STEP: Updated fallback URL
 	baseURL := os.Getenv("TRANSLATE_API_URL")
 	if baseURL == "" {
-		baseURL = "https://translate.argosopentech.com/translate"
+		// ❌ Old (blocked): "https://translate.argosopentech.com/translate"
+		// ✅ New (working mirror):
+		baseURL = "https://libretranslate.de/translate"
 	}
 
 	// Send request to LibreTranslate
@@ -69,7 +74,6 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
-	// Log non-200 responses
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		log.Printf("❌ LibreTranslate returned %d: %s", resp.StatusCode, body)
@@ -77,7 +81,6 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Decode response
 	var result TranslationResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		log.Printf("❌ Failed to decode translation response: %v", err)
@@ -87,7 +90,6 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("✅ Translated: %q", result.TranslatedText)
 
-	// Return result
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
 }
