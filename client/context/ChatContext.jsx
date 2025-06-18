@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from './AuthContext';
@@ -86,17 +87,19 @@ export const ChatProvider = ({ children }) => {
         const finalMessage = { ...msg, text: translated };
 
         if (msg.senderId === selectedUser?._id) {
+          console.log('✅ Display translated message:', finalMessage);
           setMessages((prev) => [...prev, finalMessage]);
         } else {
+          console.log('📩 Storing unseen translated message.');
           setUnseenMessages((prev) => ({
             ...prev,
             [msg.senderId]: (prev[msg.senderId] || 0) + 1,
           }));
         }
       } catch (error) {
-        console.error('Translation failed:', error.message);
+        console.error('❌ Translation failed:', error.message);
         if (msg.senderId === selectedUser?._id) {
-          setMessages((prev) => [...prev, msg]);
+          setMessages((prev) => [...prev, msg]); // fallback to original
         }
       }
     };
