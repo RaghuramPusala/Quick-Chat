@@ -21,7 +21,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-TRANSLATE_URL = os.getenv("LIBRETRANSLATE_URL", "http://localhost:5001/translate")
+LIBRETRANSLATE_URL = "https://libretranslate.de/translate"
+
 
 @app.post("/translate")
 async def translate(request: Request):
