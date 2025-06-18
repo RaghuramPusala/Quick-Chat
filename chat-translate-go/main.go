@@ -57,13 +57,9 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 	payloadBytes, _ := json.Marshal(req)
 	bodyReader := bytes.NewReader(payloadBytes)
 
-	// ✅ STEP-BY-STEP FIX: Use correct variable and fallback
+	// ✅ STEP-BY-STEP FIX: Force fallback to libretranslate.de
 	translateURL := os.Getenv("TRANSLATE_API_URL")
 	if translateURL == "" {
-		// ❌ This one is blocked by Render:
-		// translateURL = "https://translate.argosopentech.com/translate"
-
-		// ✅ Use this reliable public mirror instead:
 		translateURL = "https://libretranslate.de/translate"
 	}
 
@@ -109,3 +105,4 @@ func main() {
 		log.Fatal("❌ Server failed:", err)
 	}
 }
+
