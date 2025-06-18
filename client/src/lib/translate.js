@@ -1,5 +1,4 @@
 import axios from "axios";
-
 const TRANSLATE_URL = import.meta.env.VITE_TRANSLATE_URL;
 
 export const translateMessage = async (text, from, to) => {
@@ -10,12 +9,9 @@ export const translateMessage = async (text, from, to) => {
       target: to,
       format: "text",
     });
-
-    console.log("🔁 Translation API response:", res.data);
-
-    return res.data.translatedText || res.data.text || text;
+    return res.data.data.translations[0].translatedText;
   } catch (err) {
-    console.error("Translation failed:", err.message);
-    return text;
+    console.error("Translation failed:", err.response?.data || err.message);
+    throw err;
   }
 };
