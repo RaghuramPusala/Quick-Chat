@@ -58,7 +58,12 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 	bodyReader := bytes.NewReader(payloadBytes)
 
 	// ✅ STEP-BY-STEP FIX: Force fallback to libretranslate.de
-	
+	translateURL := os.Getenv("TRANSLATE_API_URL")
+if translateURL == "" {
+	// fallback to libretranslate.de if default fails
+	translateURL = "https://libretranslate.de/translate"
+}
+
 
 	// Send request to LibreTranslate
 	resp, err := http.Post(translateURL, "application/json", bodyReader)
