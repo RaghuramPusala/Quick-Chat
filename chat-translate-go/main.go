@@ -57,16 +57,18 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 	payloadBytes, _ := json.Marshal(req)
 	bodyReader := bytes.NewReader(payloadBytes)
 
-	// ✅ STEP: Updated fallback URL
-	baseURL := os.Getenv("TRANSLATE_API_URL")
-	if baseURL == "" {
-		// ❌ Old (blocked): "https://translate.argosopentech.com/translate"
-		// ✅ New (working mirror):
-		baseURL = "https://libretranslate.de/translate"
+	// ✅ STEP-BY-STEP FIX: Use correct variable and fallback
+	translateURL := os.Getenv("TRANSLATE_API_URL")
+	if translateURL == "" {
+		// ❌ This one is blocked by Render:
+		// translateURL = "https://translate.argosopentech.com/translate"
+
+		// ✅ Use this reliable public mirror instead:
+		translateURL = "https://libretranslate.de/translate"
 	}
 
 	// Send request to LibreTranslate
-	resp, err := http.Post(baseURL, "application/json", bodyReader)
+	resp, err := http.Post(translateURL, "application/json", bodyReader)
 	if err != nil {
 		log.Printf("❌ Error contacting LibreTranslate: %v", err)
 		http.Error(w, "Translation service error", http.StatusInternalServerError)
