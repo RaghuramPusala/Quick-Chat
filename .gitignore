@@ -16,3 +16,5 @@ translator-go/pkg/
 # Logs and OS
 *.log
 .DS_Store
+Quick-Chat/
+libretranslate-on-render/
