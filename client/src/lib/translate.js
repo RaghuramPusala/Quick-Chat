@@ -5,7 +5,6 @@ const TRANSLATE_URL = import.meta.env.VITE_TRANSLATE_URL;
 
 export const translateMessage = async (text, from, to) => {
   try {
-    console.log("🔁 Translating:", { text, from, to }); // ✅ Debug log
     const res = await axios.post(`${TRANSLATE_URL}/translate`, {
       q: text,
       source: from,
@@ -14,8 +13,7 @@ export const translateMessage = async (text, from, to) => {
     });
     return res.data.translatedText;
   } catch (err) {
-    console.error("❌ Translation failed:", err.message);
+    console.error("Translation failed:", err.message);
     throw err;
   }
 };
-
