@@ -52,7 +52,6 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("➡️ Translating: %q from %s to %s", req.Q, req.Source, req.Target)
 
-	// Marshal request
 	payloadBytes, _ := json.Marshal(req)
 	bodyReader := bytes.NewReader(payloadBytes)
 
@@ -69,7 +68,6 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("❌ Primary failed (%s): %v", primaryURL, err)
 		log.Println("🔁 Retrying with fallback LibreTranslate.de...")
 
-		// Retry with fallback
 		bodyReader.Seek(0, io.SeekStart) // rewind reader
 		resp, err = http.Post(fallbackURL, "application/json", bodyReader)
 		if err != nil {
@@ -78,3 +76,38 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		log.Printf("❌ LibreTranslate returned %d: %s", resp.StatusCode, body)
+		http.Error(w, "Translation failed", http.StatusInternalServerError)
+		return
+	}
+
+	var result TranslationResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		log.Printf("❌ Failed to decode translation response: %v", err)
+		http.Error(w, "Failed to parse response", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("✅ Translated: %q", result.TranslatedText)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
+}
+
+func main() {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "10000"
+	}
+
+	http.HandleFunc("/translate", translateHandler)
+
+	log.Printf("🚀 Translation server running on port %s", port)
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
+		log.Fatal("❌ Server failed:", err)
+	}
+}
