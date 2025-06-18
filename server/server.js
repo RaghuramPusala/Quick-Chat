@@ -12,10 +12,27 @@ import translateRoute from "./routes/translateRoute.js";
 const app = express();
 const server = http.createServer(app);
 
-// Socket.IO setup
+// ✅ CORS FIX: Allow only frontend URLs
+const allowedOrigins = [
+  "https://quickchat-eight.vercel.app",  // ✅ your Vercel domain
+  "http://localhost:5173",               // optional: dev local
+];
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
+
+// ✅ Body parser
+app.use(express.json({ limit: "4mb" }));
+
+// ✅ Socket.IO setup
 export const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
   },
 });
@@ -44,17 +61,13 @@ io.on("connection", (socket) => {
   });
 });
 
-// Middleware
-app.use(cors());
-app.use(express.json({ limit: "4mb" }));
-
-// Routes
+// ✅ Routes
 app.use("/api/status", (req, res) => res.send("Server is live"));
 app.use("/api/auth", userRouter);
 app.use("/api/message", messageRoutes);
 app.use("/api/translate", translateRoute);
 
-// Start server (✅ required for Render)
+// ✅ Start server (for Render)
 const start = async () => {
   await connectDB();
 
