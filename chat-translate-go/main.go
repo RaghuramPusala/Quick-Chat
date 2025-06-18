@@ -100,10 +100,9 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	port := os.Getenv("PORT")
-	if port == "" {
-		port = "10000"
-	}
-
+if port == "" {
+	port = "3000" // ✅ default for Cyclic
+}
 	http.HandleFunc("/translate", translateHandler)
 
 	log.Printf("🚀 Translation server running on port %s", port)
