@@ -1,4 +1,4 @@
-FROM golang:1.21-alpine
+FROM golang:1.24.4-alpine
 
 WORKDIR /app
 
@@ -7,7 +7,6 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o server .
+RUN go build -o app .
 
-EXPOSE 8080
-CMD ["./server"]
+CMD [ "./app" ]

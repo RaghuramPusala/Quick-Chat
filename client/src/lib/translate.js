@@ -1,8 +1,7 @@
-
-
 import axios from "axios";
 
-const TRANSLATE_URL = import.meta.env.VITE_TRANSLATE_URL;
+// Use your deployed translation service
+const TRANSLATE_URL = import.meta.env.VITE_TRANSLATE_URL || "https://quick-chat-translate.onrender.com";
 
 export const translateMessage = async (text, from, to) => {
   try {
