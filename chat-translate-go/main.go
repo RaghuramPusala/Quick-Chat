@@ -21,6 +21,7 @@ type TranslationResponse struct {
 }
 
 func translateHandler(w http.ResponseWriter, r *http.Request) {
+	// Allow CORS
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Token, token")
@@ -37,6 +38,7 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 
 	var req TranslationRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Println("❌ Invalid JSON:", err)
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
@@ -45,38 +47,49 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Log the received input
+	log.Printf("➡️ Translating: %q from %s to %s", req.Q, req.Source, req.Target)
+
+	// Marshal to forward to LibreTranslate
 	payloadBytes, _ := json.Marshal(req)
 	bodyReader := bytes.NewReader(payloadBytes)
 
-	// ✅ Use public LibreTranslate for Render
-	translateURL := os.Getenv("TRANSLATE_API_URL")
-	if translateURL == "" {
-		translateURL = "https://translate.argosopentech.com/translate"
+	// Get LibreTranslate URL from env or use public fallback
+	baseURL := os.Getenv("TRANSLATE_API_URL")
+	if baseURL == "" {
+		baseURL = "https://translate.argosopentech.com/translate"
 	}
 
-	resp, err := http.Post(translateURL, "application/json", bodyReader)
+	// Send request to LibreTranslate
+	resp, err := http.Post(baseURL, "application/json", bodyReader)
 	if err != nil {
-		log.Printf("Error contacting LibreTranslate: %v", err)
+		log.Printf("❌ Error contacting LibreTranslate: %v", err)
 		http.Error(w, "Translation service error", http.StatusInternalServerError)
 		return
 	}
 	defer resp.Body.Close()
 
+	// Log non-200 responses
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		log.Printf("LibreTranslate returned %d: %s", resp.StatusCode, body)
+		log.Printf("❌ LibreTranslate returned %d: %s", resp.StatusCode, body)
 		http.Error(w, "Translation failed", http.StatusInternalServerError)
 		return
 	}
 
-	var res TranslationResponse
-	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
-		http.Error(w, "Failed to parse translation", http.StatusInternalServerError)
+	// Decode response
+	var result TranslationResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		log.Printf("❌ Failed to decode translation response: %v", err)
+		http.Error(w, "Failed to parse response", http.StatusInternalServerError)
 		return
 	}
 
+	log.Printf("✅ Translated: %q", result.TranslatedText)
+
+	// Return result
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(res)
+	json.NewEncoder(w).Encode(result)
 }
 
 func main() {
@@ -87,7 +100,7 @@ func main() {
 
 	http.HandleFunc("/translate", translateHandler)
 
-	log.Printf("✅ Translation server running on port %s", port)
+	log.Printf("🚀 Translation server running on port %s", port)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		log.Fatal("❌ Server failed:", err)
 	}
