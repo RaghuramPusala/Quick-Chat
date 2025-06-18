@@ -48,7 +48,7 @@ export const ChatProvider = ({ children }) => {
       );
 
       const newMessage = res.data.newMessage;
-      setMessages((prev) => [...prev, newMessage]); // sender sees original
+      setMessages((prev) => [...prev, newMessage]);
       socket?.emit('send-message', newMessage);
     } catch (err) {
       console.error('SendMessage Error:', err.message);
@@ -68,17 +68,21 @@ export const ChatProvider = ({ children }) => {
       const isSender = msg.senderId === authUser._id;
 
       if (isSender) {
-        setMessages((prev) => [...prev, msg]); // sender sees as-is
+        setMessages((prev) => [...prev, msg]);
         return;
       }
 
       try {
-        const translated = await translateMessage(
-          msg.text,
-          msg.language || selectedUser?.language || 'en',
-          authUser.language
-        );
+        const fromLang = msg.language || selectedUser?.language || 'en';
+        const toLang = authUser.language;
 
+        console.log('🔄 Incoming message for translation:', {
+          text: msg.text,
+          from: fromLang,
+          to: toLang,
+        });
+
+        const translated = await translateMessage(msg.text, fromLang, toLang);
         const finalMessage = { ...msg, text: translated };
 
         if (msg.senderId === selectedUser?._id) {
@@ -92,7 +96,7 @@ export const ChatProvider = ({ children }) => {
       } catch (error) {
         console.error('Translation failed:', error.message);
         if (msg.senderId === selectedUser?._id) {
-          setMessages((prev) => [...prev, msg]); // fallback to original
+          setMessages((prev) => [...prev, msg]);
         }
       }
     };
