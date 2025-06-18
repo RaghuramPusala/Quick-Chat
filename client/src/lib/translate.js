@@ -1,6 +1,5 @@
 import axios from "axios";
 
-// Use only the environment variable — no fallback in production
 const TRANSLATE_URL = import.meta.env.VITE_TRANSLATE_URL;
 
 export const translateMessage = async (text, from, to) => {
@@ -11,9 +10,12 @@ export const translateMessage = async (text, from, to) => {
       target: to,
       format: "text",
     });
-    return res.data.translatedText;
+
+    console.log("🔁 Translation API response:", res.data);
+
+    return res.data.translatedText || res.data.text || text;
   } catch (err) {
     console.error("Translation failed:", err.message);
-    throw err;
+    return text;
   }
 };

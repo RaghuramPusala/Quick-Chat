@@ -5,10 +5,9 @@ import httpx
 
 app = FastAPI()
 
-# Allow CORS for your frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Or restrict to ["https://your-vercel-app.vercel.app"]
+    allow_origins=["*"],  # In production, restrict to your frontend domain
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -25,10 +24,11 @@ async def translate(req: TranslateRequest):
     async with httpx.AsyncClient() as client:
         try:
             response = await client.post(
-                "https://translate.argosopentech.com/translate",
+                "http://65.109.114.188:5000/translate"
                 json=req.dict(),
-                timeout=5
+                timeout=10
             )
+            print("🔍 RAW API RESPONSE:", response.json())  # optional debug
             response.raise_for_status()
             return response.json()
         except Exception as e:
