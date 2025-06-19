@@ -21,7 +21,6 @@ const ChatContainer = () => {
   const messagesContainerRef = useRef(null);
   const [isUserAtBottom, setIsUserAtBottom] = useState(true);
   const previousMessageCount = useRef(0);
-
   const [isTyping, setIsTyping] = useState(false);
   const typingTimeoutRef = useRef(null);
 
@@ -41,7 +40,7 @@ const ChatContainer = () => {
     const container = messagesContainerRef.current;
     const { scrollTop, scrollHeight, clientHeight } = container;
     saveScroll();
-    const nearBottom = scrollHeight - scrollTop - clientHeight < 100;
+    const nearBottom = scrollHeight - scrollTop - clientHeight < 300; // approx. 4 messages
     setIsUserAtBottom(nearBottom);
   };
 
@@ -59,7 +58,6 @@ const ChatContainer = () => {
       toast.error("Select an image file");
       return;
     }
-
     const reader = new FileReader();
     reader.onloadend = async () => {
       await sendMessage({ image: reader.result });
@@ -86,7 +84,6 @@ const ChatContainer = () => {
     const newMessageCount = messages.length;
     const diff = newMessageCount - previousMessageCount.current;
     previousMessageCount.current = newMessageCount;
-
     setTimeout(() => {
       if (savedScroll !== null && savedScroll !== '0') {
         container.scrollTop = parseInt(savedScroll);
@@ -96,7 +93,6 @@ const ChatContainer = () => {
     }, 0);
   }, [messages]);
 
-  // ✅ Emit typing with debounce
   useEffect(() => {
     if (!selectedUser || !socket) return;
     const timeout = setTimeout(() => {
@@ -105,22 +101,21 @@ const ChatContainer = () => {
     return () => clearTimeout(timeout);
   }, [input]);
 
-  // ✅ Receive typing indicator
   useEffect(() => {
     if (!socket || !selectedUser) return;
     const handleTyping = ({ from }) => {
       if (from === selectedUser._id) {
         setIsTyping(true);
         clearTimeout(typingTimeoutRef.current);
+        if (isUserAtBottom) scrollToBottom();
         typingTimeoutRef.current = setTimeout(() => {
           setIsTyping(false);
         }, 3000);
       }
     };
-
     socket.on("typing", handleTyping);
     return () => socket.off("typing", handleTyping);
-  }, [socket, selectedUser]);
+  }, [socket, selectedUser, isUserAtBottom]);
 
   useEffect(() => {
     if (!socket) return;
@@ -154,16 +149,7 @@ const ChatContainer = () => {
           <p className="text-black text-base font-medium">
             {selectedUser.fullName}
           </p>
-          <p className="text-xs text-gray-500">
-            {isTyping ? (
-              <span className="flex items-center gap-1">
-                Typing
-                <span className="animate-bounce w-[1px]">.</span>
-                <span className="animate-bounce delay-100 w-[1px]">.</span>
-                <span className="animate-bounce delay-200 w-[1px]">.</span>
-              </span>
-            ) : getStatus()}
-          </p>
+          <p className="text-xs text-gray-500">{getStatus()}</p>
         </div>
         <img
           onClick={() => setSelectedUser(null)}
@@ -183,7 +169,6 @@ const ChatContainer = () => {
         {messages.map((msg, index) => {
           const isSender = msg.senderId === authUser._id;
           const isLast = index === messages.length - 1 && isSender;
-
           return (
             <div
               key={index}
@@ -208,44 +193,60 @@ const ChatContainer = () => {
                   </div>
                 )}
                 <p className="text-xs text-gray-400 mt-1 text-right">
-                  {formatMessage(msg.createdAt)}{" "}
+                  {formatMessage(msg.createdAt)}{' '}
                   {isLast && msg.seen && <span className="text-green-500 ml-1">✔️ Seen</span>}
                 </p>
               </div>
             </div>
           );
         })}
+
+        {/* Typing indicator bubble */}
+        {!selectedUser || selectedUser._id === authUser._id || !isTyping ? null : (
+          <div className="flex items-end mb-2 justify-start">
+            <div className="max-w-[65%] bg-gray-200 text-black text-sm px-4 py-2 rounded-lg rounded-bl-none">
+              <span className="flex items-center gap-1">
+                <span className="animate-bounce">.</span>
+                <span className="animate-bounce delay-100">.</span>
+                <span className="animate-bounce delay-200">.</span>
+              </span>
+            </div>
+          </div>
+        )}
+
         <div ref={scrollEnd}></div>
       </div>
 
       {/* Input */}
-      <div className="absolute bottom-0 left-0 right-0 bg-white p-3 flex items-center gap-3 border-t border-gray-200">
-        <div className="flex-1 flex items-center bg-gray-100 px-3 py-2 rounded-full">
-          <input
-            onChange={(e) => setInput(e.target.value)}
-            value={input}
-            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage(e)}
-            type="text"
-            placeholder="Type a message"
-            className="flex-1 bg-transparent text-sm text-black placeholder-gray-500 outline-none border-none"
+      <div className="absolute bottom-0 left-0 right-0 bg-white px-3 pt-2 pb-3 border-t border-gray-200">
+        <div className="flex items-center gap-3">
+          <div className="flex-1 flex items-center bg-gray-100 px-3 py-2 rounded-full">
+            <input
+              onChange={(e) => setInput(e.target.value)}
+              value={input}
+              onKeyDown={(e) => e.key === 'Enter' && handleSendMessage(e)}
+              type="text"
+              placeholder="Type a message"
+              className="flex-1 bg-transparent text-sm text-black placeholder-gray-500 outline-none border-none"
+            />
+            <input
+              type="file"
+              id="image"
+              accept="image/png, image/jpeg"
+              hidden
+              onChange={handleSendImage}
+            />
+            <label htmlFor="image" className="cursor-pointer">
+              <img src={assets.gallery_icon} alt="Upload" className="w-5" />
+            </label>
+          </div>
+          <img
+            onClick={handleSendMessage}
+            src={assets.send_button}
+            alt="Send"
+            className="w-7 cursor-pointer"
           />
-          <input
-            type="file"
-            id="image"
-            accept="image/png, image/jpeg"
-            hidden
-            onChange={handleSendImage}
-          />
-          <label htmlFor="image" className="cursor-pointer">
-            <img src={assets.gallery_icon} alt="Upload" className="w-5" />
-          </label>
         </div>
-        <img
-          onClick={handleSendMessage}
-          src={assets.send_button}
-          alt="Send"
-          className="w-7 cursor-pointer"
-        />
       </div>
     </div>
   ) : (

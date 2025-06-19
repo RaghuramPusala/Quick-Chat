@@ -98,11 +98,16 @@ const Sidebar = () => {
               selectedUser?._id === user._id ? 'bg-gray-100' : ''
             }`}
           >
-            <img
-              src={user.profilePic || assets.avatar_icon}
-              alt=""
-              className="w-[35px] aspect-[1/1] rounded-full"
-            />
+            <div className="relative">
+              <img
+                src={user.profilePic || assets.avatar_icon}
+                alt=""
+                className="w-[35px] h-[35px] rounded-full object-cover"
+              />
+              {onlineUsers.includes(user._id) && (
+                <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+              )}
+            </div>
             <div className="flex flex-col leading-5">
               <p className="text-sm font-medium text-gray-900">{user.fullName}</p>
               <span
