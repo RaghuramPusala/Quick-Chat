@@ -1,28 +1,27 @@
 import React, { useRef, useState, useEffect, useContext } from 'react';
-import assets from '../assets/assets';
 import { ChatContext } from '../../context/ChatContext';
 import { AuthContext } from '../../context/AuthContext';
 import { formatMessage } from '../lib/utils';
 import toast from 'react-hot-toast';
 import loginImage from '../assets/login-illustration.png';
-import ChatHeader from './ChatHeader'; // ✅ imported
+import assets from '../assets/assets';
+import ChatHeader from './ChatHeader'; // ✅ use the new fixed header
 
 const ChatContainer = () => {
   const {
     messages,
     selectedUser,
-    setSelectedUser,
     sendMessage,
     getMessages,
   } = useContext(ChatContext);
+  const { authUser, socket } = useContext(AuthContext);
 
-  const { authUser, onlineUsers, socket } = useContext(AuthContext);
   const [input, setInput] = useState('');
+  const [isUserAtBottom, setIsUserAtBottom] = useState(true);
+  const [isTyping, setIsTyping] = useState(false);
   const scrollEnd = useRef(null);
   const messagesContainerRef = useRef(null);
-  const [isUserAtBottom, setIsUserAtBottom] = useState(true);
   const previousMessageCount = useRef(0);
-  const [isTyping, setIsTyping] = useState(false);
   const typingTimeoutRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -118,27 +117,17 @@ const ChatContainer = () => {
     return () => socket.off("typing", handleTyping);
   }, [socket, selectedUser, isUserAtBottom]);
 
-  useEffect(() => {
-    if (!socket) return;
-    socket.on("seenUpdate", ({ userId }) => {
-      if (selectedUser?._id === userId) {
-        getMessages(userId);
-      }
-    });
-    return () => socket.off("seenUpdate");
-  }, [socket, selectedUser]);
-
   return selectedUser ? (
     <div className="flex flex-col h-[100dvh] max-h-[100dvh] overflow-hidden bg-white text-black">
       
-      {/* ✅ Chat Header fixed separately */}
+      {/* ✅ Fixed Header */}
       <ChatHeader />
 
-      {/* ✅ Scrollable Messages Area */}
+      {/* ✅ Scrollable Chat Messages */}
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto p-4 min-h-0"
+        className="flex-1 overflow-y-auto min-h-0 p-4"
       >
         {messages.map((msg, index) => {
           const isSender = msg.senderId === authUser._id;
@@ -177,8 +166,7 @@ const ChatContainer = () => {
           );
         })}
 
-        {/* Typing Indicator */}
-        {selectedUser && selectedUser._id !== authUser._id && isTyping && (
+        {selectedUser._id !== authUser._id && isTyping && (
           <div className="flex items-end mb-2 justify-start">
             <div className="max-w-[65%] bg-gray-200 text-black text-sm px-4 py-2 rounded-lg rounded-bl-none">
               <span className="flex items-center gap-1">
@@ -193,7 +181,7 @@ const ChatContainer = () => {
         <div ref={scrollEnd}></div>
       </div>
 
-      {/* ✅ Input Section Fixed */}
+      {/* ✅ Fixed Input */}
       <div className="shrink-0 border-t border-gray-200 px-3 pt-2 pb-3 bg-white">
         <div className="flex items-center gap-3">
           <div className="flex-1 flex items-center bg-gray-100 px-3 py-2 rounded-full">
@@ -227,11 +215,7 @@ const ChatContainer = () => {
     </div>
   ) : (
     <div className="flex flex-col items-center justify-center gap-2 bg-white text-black h-full px-4">
-      <img
-        src={loginImage}
-        className="w-40 opacity-120 hidden md:block"
-        alt="icon"
-      />
+      <img src={loginImage} className="w-40 opacity-120 hidden md:block" alt="icon" />
       <p className="text-lg font-medium hidden md:block">
         Chat anytime, anywhere
       </p>
