@@ -132,10 +132,10 @@ const ChatContainer = () => {
   };
 
   return selectedUser ? (
-    <div className="flex flex-col h-full bg-white text-black">
-      
+    <div className="flex flex-col h-screen max-h-screen overflow-hidden bg-white text-black">
+
       {/* ✅ Fixed Header */}
-      <div className="shrink-0 border-b border-gray-200 px-4 py-3 bg-white flex items-center gap-3">
+      <div className="shrink-0 border-b border-gray-200 px-4 py-3 bg-white flex items-center gap-3 z-10">
         <div className="relative">
           <img
             src={selectedUser.profilePic || assets.avatar_icon}
@@ -163,7 +163,7 @@ const ChatContainer = () => {
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto p-4"
+        className="flex-1 overflow-y-auto px-4 pt-2 pb-3"
       >
         {messages.map((msg, index) => {
           const isSender = msg.senderId === authUser._id;
@@ -219,7 +219,7 @@ const ChatContainer = () => {
       </div>
 
       {/* ✅ Fixed Input */}
-      <div className="shrink-0 border-t border-gray-200 px-3 pt-2 pb-3 bg-white">
+      <div className="shrink-0 border-t border-gray-200 px-3 pt-2 pb-3 bg-white z-10">
         <div className="flex items-center gap-3">
           <div className="flex-1 flex items-center bg-gray-100 px-3 py-2 rounded-full">
             <input
