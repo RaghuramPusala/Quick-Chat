@@ -131,25 +131,11 @@ const ChatContainer = () => {
     return onlineUsers.includes(selectedUser._id) ? 'Online' : 'Offline';
   };
 
-  if (!selectedUser) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-2 bg-white text-black h-full px-4">
-        <img
-          src={loginImage}
-          className="w-40 opacity-120 hidden md:block"
-          alt="icon"
-        />
-        <p className="text-lg font-medium hidden md:block">
-          Chat anytime, anywhere
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col h-full bg-white text-black">
+  return selectedUser ? (
+    <div className="flex flex-col h-[100dvh] max-h-[100dvh] overflow-hidden bg-white text-black">
+      
       {/* ✅ Fixed Header */}
-      <div className="shrink-0 border-b border-gray-200 px-4 py-3 bg-white flex items-center gap-3 z-10">
+      <div className="shrink-0 border-b border-gray-200 px-4 py-3 bg-white flex items-center gap-3">
         <div className="relative">
           <img
             src={selectedUser.profilePic || assets.avatar_icon}
@@ -173,8 +159,12 @@ const ChatContainer = () => {
         <img src={assets.help_icon} alt="" className="max-md:hidden max-w-5" />
       </div>
 
-      {/* ✅ Scrollable Chat */}
-      <div ref={messagesContainerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto p-4">
+      {/* ✅ Scrollable Messages */}
+      <div
+        ref={messagesContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto p-4 min-h-0"
+      >
         {messages.map((msg, index) => {
           const isSender = msg.senderId === authUser._id;
           const isLast = index === messages.length - 1 && isSender;
@@ -212,6 +202,7 @@ const ChatContainer = () => {
           );
         })}
 
+        {/* Typing Indicator */}
         {selectedUser && selectedUser._id !== authUser._id && isTyping && (
           <div className="flex items-end mb-2 justify-start">
             <div className="max-w-[65%] bg-gray-200 text-black text-sm px-4 py-2 rounded-lg rounded-bl-none">
@@ -258,6 +249,17 @@ const ChatContainer = () => {
           />
         </div>
       </div>
+    </div>
+  ) : (
+    <div className="flex flex-col items-center justify-center gap-2 bg-white text-black h-full px-4">
+      <img
+        src={loginImage}
+        className="w-40 opacity-120 hidden md:block"
+        alt="icon"
+      />
+      <p className="text-lg font-medium hidden md:block">
+        Chat anytime, anywhere
+      </p>
     </div>
   );
 };
