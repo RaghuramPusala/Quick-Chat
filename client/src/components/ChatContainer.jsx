@@ -5,6 +5,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { formatMessage } from '../lib/utils';
 import toast from 'react-hot-toast';
 import loginImage from '../assets/login-illustration.png';
+import ChatHeader from './ChatHeader'; // ✅ imported
 
 const ChatContainer = () => {
   const {
@@ -127,39 +128,13 @@ const ChatContainer = () => {
     return () => socket.off("seenUpdate");
   }, [socket, selectedUser]);
 
-  const getStatus = () => {
-    return onlineUsers.includes(selectedUser._id) ? 'Online' : 'Offline';
-  };
-
   return selectedUser ? (
     <div className="flex flex-col h-[100dvh] max-h-[100dvh] overflow-hidden bg-white text-black">
       
-      {/* ✅ Fixed Header */}
-      <div className="shrink-0 border-b border-gray-200 px-4 py-3 bg-white flex items-center gap-3">
-        <div className="relative">
-          <img
-            src={selectedUser.profilePic || assets.avatar_icon}
-            alt=""
-            className="w-9 rounded-full"
-          />
-          {onlineUsers.includes(selectedUser._id) && (
-            <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
-          )}
-        </div>
-        <div className="flex-1">
-          <p className="text-black text-base font-medium">{selectedUser.fullName}</p>
-          <p className="text-xs text-gray-500">{getStatus()}</p>
-        </div>
-        <img
-          onClick={() => setSelectedUser(null)}
-          src={assets.arrow_icon}
-          alt=""
-          className="md:hidden max-w-7 cursor-pointer"
-        />
-        <img src={assets.help_icon} alt="" className="max-md:hidden max-w-5" />
-      </div>
+      {/* ✅ Chat Header fixed separately */}
+      <ChatHeader />
 
-      {/* ✅ Scrollable Messages */}
+      {/* ✅ Scrollable Messages Area */}
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
@@ -218,7 +193,7 @@ const ChatContainer = () => {
         <div ref={scrollEnd}></div>
       </div>
 
-      {/* ✅ Fixed Input */}
+      {/* ✅ Input Section Fixed */}
       <div className="shrink-0 border-t border-gray-200 px-3 pt-2 pb-3 bg-white">
         <div className="flex items-center gap-3">
           <div className="flex-1 flex items-center bg-gray-100 px-3 py-2 rounded-full">
