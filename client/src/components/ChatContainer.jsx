@@ -58,7 +58,6 @@ const ChatContainer = () => {
       toast.error("Select an image file");
       return;
     }
-
     const reader = new FileReader();
     reader.onloadend = async () => {
       await sendMessage({ image: reader.result });
@@ -133,9 +132,10 @@ const ChatContainer = () => {
   };
 
   return selectedUser ? (
-    <div className="h-full overflow-hidden relative bg-white text-black">
-      {/* Header */}
-      <div className="sticky top-0 z-10 flex items-center gap-3 py-3 px-4 border-b border-gray-200 bg-white">
+    <div className="flex flex-col h-full bg-white text-black">
+      
+      {/* ✅ Fixed Header */}
+      <div className="shrink-0 border-b border-gray-200 px-4 py-3 bg-white flex items-center gap-3">
         <div className="relative">
           <img
             src={selectedUser.profilePic || assets.avatar_icon}
@@ -147,9 +147,7 @@ const ChatContainer = () => {
           )}
         </div>
         <div className="flex-1">
-          <p className="text-black text-base font-medium">
-            {selectedUser.fullName}
-          </p>
+          <p className="text-black text-base font-medium">{selectedUser.fullName}</p>
           <p className="text-xs text-gray-500">{getStatus()}</p>
         </div>
         <img
@@ -161,11 +159,11 @@ const ChatContainer = () => {
         <img src={assets.help_icon} alt="" className="max-md:hidden max-w-5" />
       </div>
 
-      {/* Messages */}
+      {/* ✅ Scrollable Messages */}
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="flex flex-col h-[calc(100%-120px)] overflow-y-scroll p-4"
+        className="flex-1 overflow-y-auto p-4"
       >
         {messages.map((msg, index) => {
           const isSender = msg.senderId === authUser._id;
@@ -204,7 +202,7 @@ const ChatContainer = () => {
           );
         })}
 
-        {/* Typing indicator bubble */}
+        {/* Typing Indicator */}
         {selectedUser && selectedUser._id !== authUser._id && isTyping && (
           <div className="flex items-end mb-2 justify-start">
             <div className="max-w-[65%] bg-gray-200 text-black text-sm px-4 py-2 rounded-lg rounded-bl-none">
@@ -220,8 +218,8 @@ const ChatContainer = () => {
         <div ref={scrollEnd}></div>
       </div>
 
-      {/* Input */}
-      <div className="absolute bottom-0 left-0 right-0 bg-white px-3 pt-2 pb-3 border-t border-gray-200">
+      {/* ✅ Fixed Input */}
+      <div className="shrink-0 border-t border-gray-200 px-3 pt-2 pb-3 bg-white">
         <div className="flex items-center gap-3">
           <div className="flex-1 flex items-center bg-gray-100 px-3 py-2 rounded-full">
             <input
