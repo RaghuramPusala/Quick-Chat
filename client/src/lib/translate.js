@@ -1,5 +1,6 @@
 import axios from "axios";
 
+// Read base URL from environment variable (e.g. http://localhost:8000 or your Render URL)
 const TRANSLATE_URL = import.meta.env.VITE_TRANSLATE_URL;
 
 export const translateMessage = async (text, from, to) => {
@@ -13,10 +14,12 @@ export const translateMessage = async (text, from, to) => {
       format: "text",
     });
 
-    console.log("✅ Translated:", res.data.translatedText);
-    return res.data.translatedText;
+    const translated = res.data?.translatedText || res.data?.data?.translations?.[0]?.translatedText;
+
+    console.log("✅ Translated:", translated);
+    return translated;
   } catch (err) {
     console.error("❌ Translation failed:", err.message);
-    return undefined;
+    return text; // fallback to original message text if translation fails
   }
 };

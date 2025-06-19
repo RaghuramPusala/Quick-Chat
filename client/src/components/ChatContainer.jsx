@@ -1,3 +1,4 @@
+// ChatContainer.jsx
 import React, { useRef, useState, useEffect, useContext } from 'react';
 import assets from '../assets/assets';
 import { ChatContext } from '../../context/ChatContext';
@@ -15,22 +16,34 @@ const ChatContainer = () => {
     getMessages,
   } = useContext(ChatContext);
 
-  const { authUser, onlineUsers } = useContext(AuthContext);
+  const { authUser, onlineUsers, socket } = useContext(AuthContext);
   const [input, setInput] = useState('');
   const scrollEnd = useRef(null);
   const messagesContainerRef = useRef(null);
   const [isUserAtBottom, setIsUserAtBottom] = useState(true);
-  const scrollPositions = useRef({});
+  const previousMessageCount = useRef(0);
+
+  const [isTyping, setIsTyping] = useState(false);
+  const typingTimeoutRef = useRef(null);
 
   const scrollToBottom = () => {
     scrollEnd.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const saveScroll = () => {
+    if (selectedUser && messagesContainerRef.current) {
+      const y = messagesContainerRef.current.scrollTop;
+      localStorage.setItem(`scroll-${selectedUser._id}`, y);
+    }
+  };
+
   const handleScroll = () => {
     if (!messagesContainerRef.current || !selectedUser) return;
-    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
-    scrollPositions.current[selectedUser._id] = scrollTop;
-    setIsUserAtBottom(scrollHeight - scrollTop - clientHeight < 100);
+    const container = messagesContainerRef.current;
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    saveScroll();
+    const nearBottom = scrollHeight - scrollTop - clientHeight < 100;
+    setIsUserAtBottom(nearBottom);
   };
 
   const handleSendMessage = async (e) => {
@@ -38,7 +51,7 @@ const ChatContainer = () => {
     if (!input.trim()) return;
     await sendMessage({ text: input.trim() });
     setInput('');
-    if (isUserAtBottom) scrollToBottom();
+    setTimeout(() => scrollToBottom(), 100);
   };
 
   const handleSendImage = async (e) => {
@@ -51,7 +64,7 @@ const ChatContainer = () => {
     const reader = new FileReader();
     reader.onloadend = async () => {
       await sendMessage({ image: reader.result });
-      if (isUserAtBottom) scrollToBottom();
+      scrollToBottom();
       e.target.value = '';
     };
     reader.readAsDataURL(file);
@@ -60,42 +73,93 @@ const ChatContainer = () => {
   useEffect(() => {
     if (selectedUser) {
       getMessages(selectedUser._id);
+      previousMessageCount.current = 0;
+
+      // ✅ Emit seen immediately when chat opened
+      if (socket) {
+        socket.emit("markSeen", { from: authUser._id, to: selectedUser._id });
+      }
     }
   }, [selectedUser]);
 
   useEffect(() => {
     if (!messagesContainerRef.current || !selectedUser) return;
-
     const container = messagesContainerRef.current;
-    const lastScroll = scrollPositions.current[selectedUser._id] || 0;
-
-    const shouldRestore =
-      container.scrollHeight - container.scrollTop - container.clientHeight > 200;
+    const savedScroll = localStorage.getItem(`scroll-${selectedUser._id}`);
+    const newMessageCount = messages.length;
+    const diff = newMessageCount - previousMessageCount.current;
+    previousMessageCount.current = newMessageCount;
 
     setTimeout(() => {
-      if (shouldRestore) {
-        container.scrollTop = lastScroll;
-      } else if (isUserAtBottom) {
+      if (savedScroll !== null && savedScroll !== '0') {
+        container.scrollTop = parseInt(savedScroll);
+      } else if (isUserAtBottom || diff >= 5) {
         scrollToBottom();
       }
     }, 0);
   }, [messages]);
 
+  // ✅ Emit typing
+  useEffect(() => {
+    if (!selectedUser || !socket) return;
+    const handleTyping = () => {
+      socket.emit("typing", { to: selectedUser._id });
+    };
+    const timeout = setTimeout(handleTyping, 150);
+    return () => clearTimeout(timeout);
+  }, [input]);
+
+  // ✅ Listen for typing
+  useEffect(() => {
+    if (!socket || !selectedUser) return;
+    const handleTyping = ({ from }) => {
+      if (from === selectedUser._id) {
+        setIsTyping(true);
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = setTimeout(() => {
+          setIsTyping(false);
+        }, 3000);
+      }
+    };
+    socket.on("typing", handleTyping);
+    return () => socket.off("typing", handleTyping);
+  }, [socket, selectedUser]);
+
+  // ✅ Listen for seen update in real-time
+  useEffect(() => {
+    if (!socket) return;
+    socket.on("seenUpdate", ({ userId }) => {
+      if (selectedUser?._id === userId) {
+        getMessages(userId);
+      }
+    });
+    return () => socket.off("seenUpdate");
+  }, [socket, selectedUser]);
+
+  const getStatus = () => {
+    return onlineUsers.includes(selectedUser._id) ? 'Online' : 'Offline';
+  };
+
   return selectedUser ? (
     <div className="h-full overflow-hidden relative bg-white text-black">
       {/* Header */}
       <div className="flex items-center gap-3 py-3 px-4 border-b border-gray-200 bg-white">
-        <img
-          src={selectedUser.profilePic || assets.avatar_icon}
-          alt=""
-          className="w-8 rounded-full"
-        />
-        <p className="flex-1 text-black text-base font-medium flex items-center gap-2">
-          {selectedUser.fullName}
+        <div className="relative">
+          <img
+            src={selectedUser.profilePic || assets.avatar_icon}
+            alt=""
+            className="w-9 rounded-full"
+          />
           {onlineUsers.includes(selectedUser._id) && (
-            <span className="w-2 h-2 rounded-full bg-green-500"></span>
+            <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
           )}
-        </p>
+        </div>
+        <div className="flex-1">
+          <p className="text-black text-base font-medium">
+            {selectedUser.fullName}
+          </p>
+          <p className="text-xs text-gray-500">{getStatus()}</p>
+        </div>
         <img
           onClick={() => setSelectedUser(null)}
           src={assets.arrow_icon}
@@ -111,8 +175,13 @@ const ChatContainer = () => {
         onScroll={handleScroll}
         className="flex flex-col h-[calc(100%-120px)] overflow-y-scroll p-4"
       >
+        {isTyping && (
+          <div className="text-xs text-gray-500 mb-2">{selectedUser.fullName} is typing...</div>
+        )}
+
         {messages.map((msg, index) => {
           const isSender = msg.senderId === authUser._id;
+          const isLast = index === messages.length - 1 && isSender;
           return (
             <div
               key={index}
@@ -137,7 +206,8 @@ const ChatContainer = () => {
                   </div>
                 )}
                 <p className="text-xs text-gray-400 mt-1 text-right">
-                  {formatMessage(msg.createdAt)}
+                  {formatMessage(msg.createdAt)}{" "}
+                  {isLast && msg.seen && <span className="text-green-500 ml-1">✔️ Seen</span>}
                 </p>
               </div>
             </div>
@@ -177,7 +247,7 @@ const ChatContainer = () => {
       </div>
     </div>
   ) : (
-        <div className="flex flex-col items-center justify-center gap-2 bg-white text-black h-full px-4">
+    <div className="flex flex-col items-center justify-center gap-2 bg-white text-black h-full px-4">
       <img
         src={loginImage}
         className="w-40 opacity-120 hidden md:block"
