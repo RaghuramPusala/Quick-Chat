@@ -1,4 +1,3 @@
-// ChatContainer.jsx
 import React, { useRef, useState, useEffect, useContext } from 'react';
 import assets from '../assets/assets';
 import { ChatContext } from '../../context/ChatContext';
@@ -74,8 +73,6 @@ const ChatContainer = () => {
     if (selectedUser) {
       getMessages(selectedUser._id);
       previousMessageCount.current = 0;
-
-      // ✅ Emit seen immediately when chat opened
       if (socket) {
         socket.emit("markSeen", { from: authUser._id, to: selectedUser._id });
       }
@@ -99,17 +96,16 @@ const ChatContainer = () => {
     }, 0);
   }, [messages]);
 
-  // ✅ Emit typing
+  // ✅ Emit typing with debounce
   useEffect(() => {
     if (!selectedUser || !socket) return;
-    const handleTyping = () => {
+    const timeout = setTimeout(() => {
       socket.emit("typing", { to: selectedUser._id });
-    };
-    const timeout = setTimeout(handleTyping, 150);
+    }, 150);
     return () => clearTimeout(timeout);
   }, [input]);
 
-  // ✅ Listen for typing
+  // ✅ Receive typing indicator
   useEffect(() => {
     if (!socket || !selectedUser) return;
     const handleTyping = ({ from }) => {
@@ -121,11 +117,11 @@ const ChatContainer = () => {
         }, 3000);
       }
     };
+
     socket.on("typing", handleTyping);
     return () => socket.off("typing", handleTyping);
   }, [socket, selectedUser]);
 
-  // ✅ Listen for seen update in real-time
   useEffect(() => {
     if (!socket) return;
     socket.on("seenUpdate", ({ userId }) => {
@@ -158,7 +154,16 @@ const ChatContainer = () => {
           <p className="text-black text-base font-medium">
             {selectedUser.fullName}
           </p>
-          <p className="text-xs text-gray-500">{getStatus()}</p>
+          <p className="text-xs text-gray-500">
+            {isTyping ? (
+              <span className="flex items-center gap-1">
+                Typing
+                <span className="animate-bounce w-[1px]">.</span>
+                <span className="animate-bounce delay-100 w-[1px]">.</span>
+                <span className="animate-bounce delay-200 w-[1px]">.</span>
+              </span>
+            ) : getStatus()}
+          </p>
         </div>
         <img
           onClick={() => setSelectedUser(null)}
@@ -175,13 +180,10 @@ const ChatContainer = () => {
         onScroll={handleScroll}
         className="flex flex-col h-[calc(100%-120px)] overflow-y-scroll p-4"
       >
-        {isTyping && (
-          <div className="text-xs text-gray-500 mb-2">{selectedUser.fullName} is typing...</div>
-        )}
-
         {messages.map((msg, index) => {
           const isSender = msg.senderId === authUser._id;
           const isLast = index === messages.length - 1 && isSender;
+
           return (
             <div
               key={index}

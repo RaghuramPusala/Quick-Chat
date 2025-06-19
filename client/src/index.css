@@ -11,3 +11,13 @@
  ::-webkit-scrollbar{
   display: none;
 }
+.dot-flash {
+  font-size: 1rem;
+  animation: dotFlash 1s infinite;
+}
+
+@keyframes dotFlash {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
+}
+

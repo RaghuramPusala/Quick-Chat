@@ -43,7 +43,7 @@ export const ChatProvider = ({ children }) => {
     try {
       const res = await axios.post(
         `/api/message/send/${selectedUser._id}`,
-        { text, image },
+        { text, image, language: authUser.language },
         { headers: { token } }
       );
 
@@ -76,23 +76,18 @@ export const ChatProvider = ({ children }) => {
         const fromLang = msg.language || selectedUser?.language || 'en';
         const toLang = authUser.language;
 
-        console.log('🔄 Incoming message for translation:', {
-          text: msg.text,
-          from: fromLang,
-          to: toLang,
-        });
-
         const translated = await translateMessage(msg.text, fromLang, toLang);
         const finalMessage = {
           ...msg,
-          text: translated || msg.text, // fallback to original if translation fails
+          text: translated || msg.text,
         };
 
         if (msg.senderId === selectedUser?._id) {
-          console.log('✅ Display translated message:', finalMessage);
           setMessages((prev) => [...prev, finalMessage]);
+
+          // ✅ mark as seen if in same chat
+          socket.emit("markSeen", { from: authUser._id, to: selectedUser._id });
         } else {
-          console.log('📩 Storing unseen translated message:', finalMessage);
           setUnseenMessages((prev) => ({
             ...prev,
             [msg.senderId]: (prev[msg.senderId] || 0) + 1,
@@ -101,7 +96,7 @@ export const ChatProvider = ({ children }) => {
       } catch (error) {
         console.error('❌ Translation failed:', error.message);
         if (msg.senderId === selectedUser?._id) {
-          setMessages((prev) => [...prev, msg]); // fallback to untranslated message
+          setMessages((prev) => [...prev, msg]);
         }
       }
     };
@@ -114,6 +109,20 @@ export const ChatProvider = ({ children }) => {
       socket.off('getOnlineUsers');
     };
   }, [selectedUser, socket, authUser]);
+
+  // ✅ Real-time seen updates
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleSeenUpdate = ({ userId }) => {
+      if (selectedUser?._id === userId) {
+        getMessages(userId);
+      }
+    };
+
+    socket.on("seenUpdate", handleSeenUpdate);
+    return () => socket.off("seenUpdate", handleSeenUpdate);
+  }, [socket, selectedUser]);
 
   return (
     <ChatContext.Provider
