@@ -40,7 +40,7 @@ const ChatContainer = () => {
     const container = messagesContainerRef.current;
     const { scrollTop, scrollHeight, clientHeight } = container;
     saveScroll();
-    const nearBottom = scrollHeight - scrollTop - clientHeight < 300; // approx. 4 messages
+    const nearBottom = scrollHeight - scrollTop - clientHeight < 300;
     setIsUserAtBottom(nearBottom);
   };
 
@@ -58,6 +58,7 @@ const ChatContainer = () => {
       toast.error("Select an image file");
       return;
     }
+
     const reader = new FileReader();
     reader.onloadend = async () => {
       await sendMessage({ image: reader.result });
@@ -134,7 +135,7 @@ const ChatContainer = () => {
   return selectedUser ? (
     <div className="h-full overflow-hidden relative bg-white text-black">
       {/* Header */}
-      <div className="flex items-center gap-3 py-3 px-4 border-b border-gray-200 bg-white">
+      <div className="sticky top-0 z-10 flex items-center gap-3 py-3 px-4 border-b border-gray-200 bg-white">
         <div className="relative">
           <img
             src={selectedUser.profilePic || assets.avatar_icon}
@@ -194,7 +195,9 @@ const ChatContainer = () => {
                 )}
                 <p className="text-xs text-gray-400 mt-1 text-right">
                   {formatMessage(msg.createdAt)}{' '}
-                  {isLast && msg.seen && <span className="text-green-500 ml-1">✔️ Seen</span>}
+                  {isLast && msg.seen && (
+                    <span className="text-green-500 ml-1">✔️ Seen</span>
+                  )}
                 </p>
               </div>
             </div>
@@ -202,7 +205,7 @@ const ChatContainer = () => {
         })}
 
         {/* Typing indicator bubble */}
-        {!selectedUser || selectedUser._id === authUser._id || !isTyping ? null : (
+        {selectedUser && selectedUser._id !== authUser._id && isTyping && (
           <div className="flex items-end mb-2 justify-start">
             <div className="max-w-[65%] bg-gray-200 text-black text-sm px-4 py-2 rounded-lg rounded-bl-none">
               <span className="flex items-center gap-1">
