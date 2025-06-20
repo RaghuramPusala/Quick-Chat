@@ -1,18 +1,18 @@
-import React, { useState, useContext } from 'react';
-import { AuthContext } from '../../context/AuthContext';
-import isoLanguages from '../lib/languages';
-import loginImage from '../assets/login-illustration.png';
-import toast from 'react-hot-toast';
+import React, { useState, useContext } from "react";
+import { AuthContext } from "../../context/AuthContext";
+import isoLanguages from "../lib/languages";
+import loginImage from "../assets/login-illustration.png";
+import toast from "react-hot-toast";
 
 const LoginPage = () => {
   const [currState, setCurrState] = useState("Sign up");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [bio, setBio] = useState("Hi there"); // ✅ default bio
+  const [bio, setBio] = useState("Hi there");
   const [isDataSubmitted, setIsDataSubmitted] = useState(false);
-  const [language, setLanguage] = useState('');
-  const [loading, setLoading] = useState(false); // ✅ loading spinner
+  const [language, setLanguage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const { login } = useContext(AuthContext);
 
@@ -20,39 +20,43 @@ const LoginPage = () => {
     event.preventDefault();
     setLoading(true);
 
-    if (currState === 'Sign up' && !isDataSubmitted) {
+    if (currState === "Sign up" && !isDataSubmitted) {
       setIsDataSubmitted(true);
       setLoading(false);
       return;
     }
 
     try {
-      await new Promise((r) => setTimeout(r, 500)); // ✅ 0.5s spinner
+      await new Promise((r) => setTimeout(r, 500));
       await login(
-        currState === "Sign up" ? 'signup' : 'login',
+        currState === "Sign up" ? "signup" : "login",
         currState === "Sign up"
           ? { fullName, email, password, bio, language }
           : { email, password }
       );
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Login/Signup failed");
+      // handled in context
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center px-4">
       <div className="w-full max-w-5xl flex flex-col md:flex-row items-center justify-center">
-        
         {/* Left Image */}
         <div className="hidden md:flex w-1/2 items-center justify-center p-4">
           <img src={loginImage} alt="QuickChat" className="max-w-[85%] h-auto" />
         </div>
 
         {/* Right Form */}
-        <form onSubmit={onSubmitHandler} className="w-full md:w-1/2 max-w-sm px-6 py-10 flex flex-col gap-4 text-sm">
-          <h1 className="text-2xl font-semibold text-center mb-2 text-gray-800">QuickChat</h1>
+        <form
+          onSubmit={onSubmitHandler}
+          className="w-full md:w-1/2 max-w-sm px-6 py-10 flex flex-col gap-4 text-sm"
+        >
+          <h1 className="text-2xl font-semibold text-center mb-2 text-gray-800">
+            QuickChat
+          </h1>
 
           {currState === "Sign up" && !isDataSubmitted && (
             <input
@@ -105,14 +109,19 @@ const LoginPage = () => {
                 required
                 className="p-2.5 bg-gray-100 border border-gray-300 rounded-md"
               >
-                <option value="" disabled>Select your preferred language</option>
+                <option value="" disabled>
+                  Select your preferred language
+                </option>
                 {isoLanguages.map((lang) => (
-                  <option key={lang.code} value={lang.code}>{lang.name}</option>
+                  <option key={lang.code} value={lang.code}>
+                    {lang.name}
+                  </option>
                 ))}
               </select>
 
               <p className="text-[11px] text-yellow-600 -mt-1">
-                ⚠️ Once selected, you <strong>cannot change</strong> your language later.
+                ⚠️ Once selected, you <strong>cannot change</strong> your
+                language later.
               </p>
             </>
           )}
@@ -130,7 +139,7 @@ const LoginPage = () => {
           <div className="text-center text-xs text-gray-600">
             {currState === "Sign up" ? (
               <p>
-                Already have an account?{' '}
+                Already have an account?{" "}
                 <span
                   onClick={() => {
                     setCurrState("Login");
@@ -143,7 +152,7 @@ const LoginPage = () => {
               </p>
             ) : (
               <p>
-                Don’t have an account?{' '}
+                Don’t have an account?{" "}
                 <span
                   onClick={() => setCurrState("Sign up")}
                   className="text-purple-600 cursor-pointer hover:underline"

@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }) => {
         connectSocket(data.user);
       }
     } catch (error) {
-      toast.error(error.message || "Auth check failed");
+      toast.error(error?.response?.data?.message || "Auth check failed");
     }
   };
 
@@ -59,16 +59,18 @@ export const AuthProvider = ({ children }) => {
         await checkAuth();
         toast.success(data.message);
         return data;
+      } else {
+        throw new Error(data.message || "Login/Signup failed");
       }
     } catch (error) {
-      // ✅ Custom friendly error messages
-      const errorMsg =
+      const msg =
         error?.response?.data?.message ||
         (state === "signup"
           ? "Email already taken"
           : "Wrong password or user not found");
-      toast.error(errorMsg);
-      throw error; // ✅ re-throw to handle in LoginPage
+      toast.remove(); // ✅ Prevent duplicate toast
+      toast.error(msg);
+      throw error;
     }
   };
 
