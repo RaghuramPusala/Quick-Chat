@@ -132,9 +132,10 @@ const ChatContainer = () => {
   };
 
   return selectedUser ? (
-    <div className="h-full overflow-hidden relative bg-white text-black">
-      {/* Header */}
-      <div className="flex items-center gap-3 py-3 px-4 border-b border-gray-200 bg-white">
+    <div className="h-full overflow-hidden relative bg-white text-black flex flex-col">
+      
+      {/* ✅ Sticky Header Always Visible on Mobile */}
+      <div className="flex items-center gap-3 py-3 px-4 border-b border-gray-200 bg-white sticky top-0 z-10">
         <div className="relative">
           <img
             src={selectedUser.profilePic || assets.avatar_icon}
@@ -164,7 +165,7 @@ const ChatContainer = () => {
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="flex flex-col h-[calc(100%-120px)] overflow-y-scroll p-4"
+        className="flex-1 overflow-y-scroll p-4"
       >
         {messages.map((msg, index) => {
           const isSender = msg.senderId === authUser._id;
@@ -179,7 +180,7 @@ const ChatContainer = () => {
                   <img
                     src={msg.image}
                     alt="message"
-                    className="rounded-lg border border-gray-400 mb-1"
+                    className="rounded-lg border border-gray-400 mb-1 max-w-full"
                   />
                 ) : (
                   <div
@@ -218,7 +219,7 @@ const ChatContainer = () => {
       </div>
 
       {/* Input */}
-      <div className="absolute bottom-0 left-0 right-0 bg-white px-3 pt-2 pb-3 border-t border-gray-200">
+      <div className="bg-white px-3 pt-2 pb-3 border-t border-gray-200">
         <div className="flex items-center gap-3">
           <div className="flex-1 flex items-center bg-gray-100 px-3 py-2 rounded-full">
             <input
