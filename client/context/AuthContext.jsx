@@ -1,9 +1,9 @@
- import { createContext, useState, useEffect } from "react";
+import { createContext, useState, useEffect } from "react";
 import axios from "axios";
 import { io } from "socket.io-client";
 import { toast } from "react-hot-toast";
 
-const backendUrl = import.meta.env.VITE_API_URL; // ✅ Fixed here
+const backendUrl = import.meta.env.VITE_API_URL;
 axios.defaults.baseURL = backendUrl;
 
 export const AuthContext = createContext();
@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }) => {
         connectSocket(data.user);
       }
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error.message || "Auth check failed");
     }
   };
 
@@ -58,10 +58,17 @@ export const AuthProvider = ({ children }) => {
         axios.defaults.headers.common["token"] = data.token;
         await checkAuth();
         toast.success(data.message);
-        return data; // ✅ Needed for navigation
+        return data;
       }
     } catch (error) {
-      toast.error(error.message);
+      // ✅ Custom friendly error messages
+      const errorMsg =
+        error?.response?.data?.message ||
+        (state === "signup"
+          ? "Email already taken"
+          : "Wrong password or user not found");
+      toast.error(errorMsg);
+      throw error; // ✅ re-throw to handle in LoginPage
     }
   };
 
@@ -83,21 +90,25 @@ export const AuthProvider = ({ children }) => {
         toast.success("Profile updated successfully");
       }
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error.message || "Failed to update profile");
     }
   };
 
-  const value = {
-    axios,
-    authUser,
-    setAuthUser,
-    onlineUsers,
-    socket,
-    login,
-    logout,
-    updateProfile,
-    token,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        axios,
+        authUser,
+        setAuthUser,
+        onlineUsers,
+        socket,
+        login,
+        logout,
+        updateProfile,
+        token,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };

@@ -2,32 +2,43 @@ import React, { useState, useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import isoLanguages from '../lib/languages';
 import loginImage from '../assets/login-illustration.png';
+import toast from 'react-hot-toast';
 
 const LoginPage = () => {
   const [currState, setCurrState] = useState("Sign up");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [bio, setBio] = useState("");
+  const [bio, setBio] = useState("Hi there"); // ✅ default bio
   const [isDataSubmitted, setIsDataSubmitted] = useState(false);
   const [language, setLanguage] = useState('');
+  const [loading, setLoading] = useState(false); // ✅ loading spinner
 
   const { login } = useContext(AuthContext);
 
-  const onSubmitHandler = (event) => {
+  const onSubmitHandler = async (event) => {
     event.preventDefault();
+    setLoading(true);
 
     if (currState === 'Sign up' && !isDataSubmitted) {
       setIsDataSubmitted(true);
+      setLoading(false);
       return;
     }
 
-    login(
-      currState === "Sign up" ? 'signup' : 'login',
-      currState === "Sign up"
-        ? { fullName, email, password, bio, language }
-        : { email, password }
-    );
+    try {
+      await new Promise((r) => setTimeout(r, 500)); // ✅ 0.5s spinner
+      await login(
+        currState === "Sign up" ? 'signup' : 'login',
+        currState === "Sign up"
+          ? { fullName, email, password, bio, language }
+          : { email, password }
+      );
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Login/Signup failed");
+    }
+
+    setLoading(false);
   };
 
   return (
@@ -36,11 +47,7 @@ const LoginPage = () => {
         
         {/* Left Image */}
         <div className="hidden md:flex w-1/2 items-center justify-center p-4">
-          <img
-            src={loginImage}
-            alt="QuickChat"
-            className="max-w-[85%] h-auto"
-          />
+          <img src={loginImage} alt="QuickChat" className="max-w-[85%] h-auto" />
         </div>
 
         {/* Right Form */}
@@ -112,9 +119,12 @@ const LoginPage = () => {
 
           <button
             type="submit"
-            className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 rounded-md"
+            disabled={loading}
+            className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 rounded-md flex justify-center items-center"
           >
-            {currState === "Sign up" ? "Create Account" : "Log in"}
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            ) : currState === "Sign up" ? "Create Account" : "Log in"}
           </button>
 
           <div className="text-center text-xs text-gray-600">

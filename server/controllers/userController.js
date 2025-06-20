@@ -3,18 +3,18 @@ import bcrypt from "bcryptjs";
 import { generateToken } from "../lib/utils.js";
 import cloudinary from "../lib/cloudinary.js";
 
-// ✅ Signup a new user with language support
+// ✅ Signup a new user
 export const signup = async (req, res) => {
   const { fullName, email, password, bio, language } = req.body;
 
   try {
     if (!fullName || !email || !password || !bio || !language) {
-      return res.json({ success: false, message: "Missing Details" });
+      return res.status(400).json({ success: false, message: "Missing Details" });
     }
 
     const user = await User.findOne({ email });
     if (user) {
-      return res.json({ success: false, message: "Account already exists" });
+      return res.status(400).json({ success: false, message: "Email already taken" });
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -25,7 +25,7 @@ export const signup = async (req, res) => {
       email,
       password: hashedPassword,
       bio,
-      language, // ✅ Include language
+      language,
     });
 
     const token = generateToken(newUser._id);
@@ -38,7 +38,7 @@ export const signup = async (req, res) => {
     });
   } catch (error) {
     console.log(error.message);
-    res.json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
@@ -49,12 +49,12 @@ export const login = async (req, res) => {
     const userData = await User.findOne({ email });
 
     if (!userData) {
-      return res.json({ success: false, message: "Invalid credentials" });
+      return res.status(401).json({ success: false, message: "Wrong password or email" });
     }
 
     const isPasswordCorrect = await bcrypt.compare(password, userData.password);
     if (!isPasswordCorrect) {
-      return res.json({ success: false, message: "Invalid credentials" });
+      return res.status(401).json({ success: false, message: "Wrong password or email" });
     }
 
     const token = generateToken(userData._id);
@@ -67,7 +67,7 @@ export const login = async (req, res) => {
     });
   } catch (error) {
     console.log(error.message);
-    res.json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
@@ -105,7 +105,7 @@ export const updateProfile = async (req, res) => {
     res.json({ success: true, user: updatedUser });
   } catch (error) {
     console.log(error.message);
-    res.json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
@@ -116,7 +116,7 @@ export const getAllUsers = async (req, res) => {
     res.json({ success: true, users });
   } catch (error) {
     console.log(error.message);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
@@ -138,6 +138,6 @@ export const setLanguage = async (req, res) => {
 
     res.json({ success: true, user });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
