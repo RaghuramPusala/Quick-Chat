@@ -4,6 +4,7 @@ import { ChatContext } from '../../context/ChatContext';
 import { AuthContext } from '../../context/AuthContext';
 import { formatMessage } from '../lib/utils';
 import toast from 'react-hot-toast';
+import loginImage from '../assets/login-illustration.png';
 
 const ChatContainer = () => {
   const {
@@ -131,14 +132,13 @@ const ChatContainer = () => {
   };
 
   return selectedUser ? (
-    <div className="relative h-[100dvh] max-h-[100dvh] overflow-hidden bg-white text-black">
-      
-      {/* ✅ Fixed Header */}
-      <div className="fixed top-0 left-0 w-full border-b border-gray-200 px-4 py-3 bg-white z-20 flex items-center gap-3">
+    <div className="h-full overflow-hidden relative bg-white text-black">
+      {/* Header */}
+      <div className="flex items-center gap-3 py-3 px-4 border-b border-gray-200 bg-white">
         <div className="relative">
           <img
             src={selectedUser.profilePic || assets.avatar_icon}
-            alt="User"
+            alt=""
             className="w-9 rounded-full"
           />
           {onlineUsers.includes(selectedUser._id) && (
@@ -146,7 +146,9 @@ const ChatContainer = () => {
           )}
         </div>
         <div className="flex-1">
-          <p className="text-black text-base font-medium">{selectedUser.fullName}</p>
+          <p className="text-black text-base font-medium">
+            {selectedUser.fullName}
+          </p>
           <p className="text-xs text-gray-500">{getStatus()}</p>
         </div>
         <img
@@ -158,11 +160,11 @@ const ChatContainer = () => {
         <img src={assets.help_icon} alt="" className="max-md:hidden max-w-5" />
       </div>
 
-      {/* ✅ Scrollable Messages */}
+      {/* Messages */}
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="pt-[68px] pb-[70px] overflow-y-auto h-full"
+        className="flex flex-col h-[calc(100%-120px)] overflow-y-scroll p-4"
       >
         {messages.map((msg, index) => {
           const isSender = msg.senderId === authUser._id;
@@ -170,7 +172,7 @@ const ChatContainer = () => {
           return (
             <div
               key={index}
-              className={`flex items-end mb-2 px-4 ${isSender ? 'justify-end' : 'justify-start'}`}
+              className={`flex items-end mb-2 ${isSender ? 'justify-end' : 'justify-start'}`}
             >
               <div className="max-w-[65%]">
                 {msg.image ? (
@@ -192,9 +194,7 @@ const ChatContainer = () => {
                 )}
                 <p className="text-xs text-gray-400 mt-1 text-right">
                   {formatMessage(msg.createdAt)}{' '}
-                  {isLast && msg.seen && (
-                    <span className="text-green-500 ml-1">✔️ Seen</span>
-                  )}
+                  {isLast && msg.seen && <span className="text-green-500 ml-1">✔️ Seen</span>}
                 </p>
               </div>
             </div>
@@ -202,8 +202,8 @@ const ChatContainer = () => {
         })}
 
         {/* Typing Indicator */}
-        {selectedUser && selectedUser._id !== authUser._id && isTyping && (
-          <div className="flex items-end mb-2 justify-start px-4">
+        {!selectedUser || selectedUser._id === authUser._id || !isTyping ? null : (
+          <div className="flex items-end mb-2 justify-start">
             <div className="max-w-[65%] bg-gray-200 text-black text-sm px-4 py-2 rounded-lg rounded-bl-none">
               <span className="flex items-center gap-1">
                 <span className="animate-bounce">.</span>
@@ -217,8 +217,8 @@ const ChatContainer = () => {
         <div ref={scrollEnd}></div>
       </div>
 
-      {/* ✅ Fixed Input */}
-      <div className="fixed bottom-0 left-0 w-full border-t border-gray-200 px-3 pt-2 pb-3 bg-white z-20">
+      {/* Input */}
+      <div className="absolute bottom-0 left-0 right-0 bg-white px-3 pt-2 pb-3 border-t border-gray-200">
         <div className="flex items-center gap-3">
           <div className="flex-1 flex items-center bg-gray-100 px-3 py-2 rounded-full">
             <input
@@ -252,7 +252,7 @@ const ChatContainer = () => {
   ) : (
     <div className="flex flex-col items-center justify-center gap-2 bg-white text-black h-full px-4">
       <img
-        src={assets.login_illustration}
+        src={loginImage}
         className="w-40 opacity-120 hidden md:block"
         alt="icon"
       />

@@ -66,7 +66,6 @@ export const ChatProvider = ({ children }) => {
 
     const handleIncomingMessage = async (msg) => {
       const isSender = msg.senderId === authUser._id;
-
       if (isSender) {
         setMessages((prev) => [...prev, msg]);
         return;
@@ -76,23 +75,15 @@ export const ChatProvider = ({ children }) => {
         const fromLang = msg.language || selectedUser?.language || 'en';
         const toLang = authUser.language;
 
-        console.log('🔄 Incoming message for translation:', {
-          text: msg.text,
-          from: fromLang,
-          to: toLang,
-        });
-
         const translated = await translateMessage(msg.text, fromLang, toLang);
         const finalMessage = {
           ...msg,
-          text: translated || msg.text, // fallback to original if translation fails
+          text: translated || msg.text, // fallback to original
         };
 
         if (msg.senderId === selectedUser?._id) {
-          console.log('✅ Display translated message:', finalMessage);
           setMessages((prev) => [...prev, finalMessage]);
         } else {
-          console.log('📩 Storing unseen translated message:', finalMessage);
           setUnseenMessages((prev) => ({
             ...prev,
             [msg.senderId]: (prev[msg.senderId] || 0) + 1,
@@ -101,7 +92,7 @@ export const ChatProvider = ({ children }) => {
       } catch (error) {
         console.error('❌ Translation failed:', error.message);
         if (msg.senderId === selectedUser?._id) {
-          setMessages((prev) => [...prev, msg]); // fallback to untranslated message
+          setMessages((prev) => [...prev, msg]); // fallback
         }
       }
     };
