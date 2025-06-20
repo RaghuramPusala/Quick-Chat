@@ -132,9 +132,9 @@ const ChatContainer = () => {
   };
 
   return selectedUser ? (
-    <div className="h-full overflow-hidden flex flex-col bg-white text-black">
-      {/* Header (fixed for mobile) */}
-      <div className="shrink-0 z-10 bg-white border-b border-gray-200 flex items-center gap-3 py-3 px-4">
+    <div className="h-full overflow-hidden relative bg-white text-black flex flex-col">
+      {/* Header - always visible */}
+      <div className="shrink-0 flex items-center gap-3 py-3 px-4 border-b border-gray-200 bg-white z-10">
         <div className="relative">
           <img
             src={selectedUser.profilePic || assets.avatar_icon}
@@ -146,7 +146,9 @@ const ChatContainer = () => {
           )}
         </div>
         <div className="flex-1">
-          <p className="text-black text-base font-medium">{selectedUser.fullName}</p>
+          <p className="text-black text-base font-medium">
+            {selectedUser.fullName}
+          </p>
           <p className="text-xs text-gray-500">{getStatus()}</p>
         </div>
         <img
@@ -158,7 +160,7 @@ const ChatContainer = () => {
         <img src={assets.help_icon} alt="" className="max-md:hidden max-w-5" />
       </div>
 
-      {/* Messages */}
+      {/* Messages - scrollable */}
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
@@ -211,10 +213,11 @@ const ChatContainer = () => {
             </div>
           </div>
         )}
+
         <div ref={scrollEnd}></div>
       </div>
 
-      {/* Input */}
+      {/* Input - stays above keyboard */}
       <div className="shrink-0 bg-white px-3 pt-2 pb-3 border-t border-gray-200">
         <div className="flex items-center gap-3">
           <div className="flex-1 flex items-center bg-gray-100 px-3 py-2 rounded-full">
@@ -224,7 +227,7 @@ const ChatContainer = () => {
               onKeyDown={(e) => e.key === 'Enter' && handleSendMessage(e)}
               type="text"
               placeholder="Type a message"
-              className="flex-1 bg-transparent text-sm text-black placeholder-gray-500 outline-none border-none"
+              className="flex-1 bg-transparent text-sm text-black placeholder-gray-500 outline-none border-none min-h-[36px] cursor-text"
             />
             <input
               type="file"
@@ -248,8 +251,14 @@ const ChatContainer = () => {
     </div>
   ) : (
     <div className="flex flex-col items-center justify-center gap-2 bg-white text-black h-full px-4">
-      <img src={loginImage} className="w-40 opacity-120 hidden md:block" alt="icon" />
-      <p className="text-lg font-medium hidden md:block">Chat anytime, anywhere</p>
+      <img
+        src={loginImage}
+        className="w-40 opacity-120 hidden md:block"
+        alt="icon"
+      />
+      <p className="text-lg font-medium hidden md:block">
+        Chat anytime, anywhere
+      </p>
     </div>
   );
 };
