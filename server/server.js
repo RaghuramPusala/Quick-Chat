@@ -14,7 +14,8 @@ const server = http.createServer(app);
 
 const allowedOrigins = [
   "https://quickchat-eight.vercel.app", // Vercel domain
-  "http://localhost:5173",              // Dev local
+  "http://localhost:5173", 
+  "http://localhost:8081",             // Dev local
 ];
 
 app.use(
