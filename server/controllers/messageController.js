@@ -1,4 +1,5 @@
 import axios from 'axios';
+import mongoose from 'mongoose';
 import Message from "../models/Message.js";
 import User from "../models/User.js";
 import cloudinary from "../lib/cloudinary.js";
@@ -52,7 +53,7 @@ const sendMessage = async (req, res) => {
   }
 };
 
-// ✅ Get messages (with infinite scroll support)
+// ✅ Get messages (with infinite scroll fix)
 const getMessages = async (req, res) => {
   try {
     const selectedUserId = req.params.id;
@@ -66,8 +67,9 @@ const getMessages = async (req, res) => {
       ],
     };
 
-    if (olderThan) {
-      query._id = { $lt: olderThan }; // MongoDB ObjectId supports this
+    // ✅ Only add filter if valid ObjectId
+    if (olderThan && mongoose.Types.ObjectId.isValid(olderThan)) {
+      query._id = { $lt: new mongoose.Types.ObjectId(olderThan) };
     }
 
     const messages = await Message.find(query)
@@ -81,7 +83,7 @@ const getMessages = async (req, res) => {
 
     res.json({
       success: true,
-      messages: messages.reverse(), // oldest → newest
+      messages: messages.reverse(), // return oldest → newest
     });
   } catch (error) {
     console.log("Get Messages Error:", error.message);
