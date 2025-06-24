@@ -3,7 +3,7 @@ import Message from "../models/Message.js";
 import User from "../models/User.js";
 import cloudinary from "../lib/cloudinary.js";
 
-// ✅ Helper (optional): Translate message using Go backend — kept for reuse
+// ✅ Translate (kept for reuse)
 const translateMessage = async (text, sourceLang, targetLang) => {
   if (!text || sourceLang === targetLang) return text;
 
@@ -21,7 +21,7 @@ const translateMessage = async (text, sourceLang, targetLang) => {
   }
 };
 
-// ✅ Controller: Send message (store original text only)
+// ✅ Send message
 const sendMessage = async (req, res) => {
   try {
     const { text, image } = req.body;
@@ -38,11 +38,10 @@ const sendMessage = async (req, res) => {
       imageUrl = upload.secure_url;
     }
 
-    // ✅ Save original message only
     const newMessage = await Message.create({
       senderId,
       receiverId,
-      text, // do not translate
+      text,
       image: imageUrl,
     });
 
@@ -53,32 +52,44 @@ const sendMessage = async (req, res) => {
   }
 };
 
-// ✅ Controller: Get messages between users
+// ✅ Get messages (with infinite scroll support)
 const getMessages = async (req, res) => {
   try {
     const selectedUserId = req.params.id;
     const myId = req.user._id;
+    const { olderThan } = req.query;
 
-    const messages = await Message.find({
+    const query = {
       $or: [
         { senderId: myId, receiverId: selectedUserId },
         { senderId: selectedUserId, receiverId: myId },
       ],
-    }).sort({ createdAt: 1 });
+    };
+
+    if (olderThan) {
+      query._id = { $lt: olderThan }; // MongoDB ObjectId supports this
+    }
+
+    const messages = await Message.find(query)
+      .sort({ _id: -1 }) // newest first
+      .limit(20);        // lazy load
 
     await Message.updateMany(
       { senderId: selectedUserId, receiverId: myId },
       { seen: true }
     );
 
-    res.json({ success: true, messages });
+    res.json({
+      success: true,
+      messages: messages.reverse(), // oldest → newest
+    });
   } catch (error) {
     console.log("Get Messages Error:", error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// ✅ Controller: Mark a single message as seen
+// ✅ Mark message as seen
 const markMessageAsSeen = async (req, res) => {
   try {
     const { id } = req.params;
@@ -90,11 +101,10 @@ const markMessageAsSeen = async (req, res) => {
   }
 };
 
-// ✅ Controller: Get all users except self, with unseen message count
+// ✅ Get users for sidebar with unseen count
 const getUsersForSidebar = async (req, res) => {
   try {
     const userId = req.user._id;
-
     const users = await User.find({ _id: { $ne: userId } }).select("-password");
 
     const unseenMessages = {};
@@ -116,7 +126,6 @@ const getUsersForSidebar = async (req, res) => {
   }
 };
 
-// ✅ Export all controllers
 export {
   sendMessage,
   getMessages,
