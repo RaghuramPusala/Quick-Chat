@@ -8,6 +8,8 @@ import { connectDB } from "./lib/db.js";
 import userRouter from "./routes/userRoutes.js";
 import messageRoutes from "./routes/messageRoute.js";
 import translateRoute from "./routes/translateRoute.js";
+import friendRoutes from "./routes/friendRoutes.js";
+
 
 const app = express();
 const server = http.createServer(app);
@@ -77,6 +79,8 @@ app.use("/api/status", (req, res) => res.send("Server is live"));
 app.use("/api/auth", userRouter);
 app.use("/api/message", messageRoutes);
 app.use("/api/translate", translateRoute);
+app.use("/api/friends", friendRoutes);
+
 
 // ✅ Start server
 const start = async () => {

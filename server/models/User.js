@@ -7,8 +7,11 @@ const userSchema = new mongoose.Schema({
   profilePic: { type: String, default: "" },
   bio: { type: String },
   language: { type: String, default: 'en' },
+  countryCode: { type: String }, // optional auto-set from language
+  friendRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  sentRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  friends: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
 }, { timestamps: true });
 
 const User = mongoose.model("User", userSchema);
-
 export default User;

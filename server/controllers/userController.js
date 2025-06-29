@@ -5,27 +5,49 @@ import cloudinary from "../lib/cloudinary.js";
 
 // ✅ Signup a new user
 export const signup = async (req, res) => {
-  const { fullName, email, password, bio, language } = req.body;
+  const { fullName, username, email, password, bio, language } = req.body;
 
   try {
-    if (!fullName || !email || !password || !bio || !language) {
+    if (!fullName || !username || !email || !password || !bio || !language) {
       return res.status(400).json({ success: false, message: "Missing Details" });
     }
 
-    const user = await User.findOne({ email });
-    if (user) {
+    const existingEmail = await User.findOne({ email });
+    if (existingEmail) {
       return res.status(400).json({ success: false, message: "Email already taken" });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const existingUsername = await User.findOne({ username });
+    if (existingUsername) {
+      return res.status(400).json({ success: false, message: "Username already taken" });
+    }
+
+    const languageToCountry = {
+      en: "US",
+      hi: "IN",
+      fr: "FR",
+      es: "ES",
+      zh: "CN",
+      ja: "JP",
+      de: "DE",
+      ru: "RU",
+      ko: "KR",
+      pt: "BR",
+      it: "IT",
+    };
+
+    const country = languageToCountry[language] || "US";
+
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = await User.create({
       fullName,
+      username,
       email,
       password: hashedPassword,
       bio,
       language,
+      country,
     });
 
     const token = generateToken(newUser._id);
@@ -130,9 +152,25 @@ export const setLanguage = async (req, res) => {
       return res.status(400).json({ success: false, message: "Language is required" });
     }
 
+    const languageToCountry = {
+      en: "US",
+      hi: "IN",
+      fr: "FR",
+      es: "ES",
+      zh: "CN",
+      ja: "JP",
+      de: "DE",
+      ru: "RU",
+      ko: "KR",
+      pt: "BR",
+      it: "IT",
+    };
+
+    const country = languageToCountry[language] || "US";
+
     const user = await User.findByIdAndUpdate(
       userId,
-      { language },
+      { language, country },
       { new: true }
     );
 
