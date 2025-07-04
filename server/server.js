@@ -10,14 +10,13 @@ import messageRoutes from "./routes/messageRoute.js";
 import translateRoute from "./routes/translateRoute.js";
 import friendRoutes from "./routes/friendRoutes.js";
 
-
 const app = express();
 const server = http.createServer(app);
 
 const allowedOrigins = [
   "https://quickchat-eight.vercel.app", // Vercel domain
-  "http://localhost:5173", 
-  "http://localhost:8081",             // Dev local
+  "http://localhost:5173",
+  "http://localhost:8081", // Dev local
 ];
 
 app.use(
@@ -79,8 +78,7 @@ app.use("/api/status", (req, res) => res.send("Server is live"));
 app.use("/api/auth", userRouter);
 app.use("/api/message", messageRoutes);
 app.use("/api/translate", translateRoute);
-app.use("/api/friends", friendRoutes);
-
+app.use("/api/friends", friendRoutes); // ✅ merged friend routes
 
 // ✅ Start server
 const start = async () => {
