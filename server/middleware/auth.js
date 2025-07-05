@@ -1,8 +1,7 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
-// ✅ Single export for use in all routes
-export const authMiddleware = async (req, res, next) => {
+const authHandler = async (req, res, next) => {
   try {
     const token = req.headers.token;
     if (!token) {
@@ -24,3 +23,7 @@ export const authMiddleware = async (req, res, next) => {
     res.status(401).json({ success: false, message: "Unauthorized: " + error.message });
   }
 };
+
+// ✅ Export under both names for backward compatibility
+export const authMiddleware = authHandler;
+export const protectRoute = authHandler;
