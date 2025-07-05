@@ -1,5 +1,5 @@
 import User from "../models/User.js";
-import { getUserSocket } from "../utils/socketManager.js";
+import { userSocketMap, io } from "../server.js";
 
 // ✅ Send friend request
 export const sendFriendRequest = async (req, res) => {
@@ -37,7 +37,7 @@ export const sendFriendRequest = async (req, res) => {
   }
 };
 
-// ✅ Accept friend request + EMIT SOCKET
+// ✅ Accept friend request + emit to both users
 export const acceptFriendRequest = async (req, res) => {
   try {
     const toUserId = req.user._id;
@@ -58,22 +58,23 @@ export const acceptFriendRequest = async (req, res) => {
     receiver.friendRequests = receiver.friendRequests.filter(id => id.toString() !== fromUserId);
     sender.sentRequests = sender.sentRequests.filter(id => id.toString() !== toUserId.toString());
 
-    // Add to friends list
+    // Add to friends
     receiver.friends.push(fromUserId);
     sender.friends.push(toUserId);
 
     await receiver.save();
     await sender.save();
 
-    // 🚀 Emit real-time event to both users
-    const senderSocket = getUserSocket(fromUserId);
-    const receiverSocket = getUserSocket(toUserId);
+    // 🔥 Emit real-time updates to both users
+    const senderSocketId = userSocketMap[fromUserId];
+    const receiverSocketId = userSocketMap[toUserId];
 
-    if (senderSocket) {
-      senderSocket.emit("friend-accepted", { userId: toUserId });
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("friend-accepted", { userId: toUserId });
     }
-    if (receiverSocket) {
-      receiverSocket.emit("friend-accepted", { userId: fromUserId });
+
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("friend-accepted", { userId: fromUserId });
     }
 
     res.json({ success: true, message: "Friend request accepted" });
