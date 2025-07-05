@@ -1,19 +1,18 @@
-import User from "../models/User.js";
 import jwt from "jsonwebtoken";
+import User from "../models/User.js";
 
-// Middleware to protect routes
-export const protectRoute = async (req, res, next) => {
+// ✅ Single export for use in all routes
+export const authMiddleware = async (req, res, next) => {
   try {
     const token = req.headers.token;
     if (!token) {
-      return res.status(401).json({ success: false, message: "No token provided" });
+      return res.status(401).json({ success: false, message: "Unauthorized: No token provided" });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.userId = decoded.userId; // ✅ Add this line
+    req.userId = decoded.userId;
 
     const user = await User.findById(decoded.userId).select("-password");
-
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
@@ -21,7 +20,7 @@ export const protectRoute = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
-    console.log(error.message);
+    console.error("authMiddleware error:", error.message);
     res.status(401).json({ success: false, message: "Unauthorized: " + error.message });
   }
 };
