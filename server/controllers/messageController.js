@@ -1,18 +1,17 @@
-import axios from 'axios';
+import axios from "axios";
 import Message from "../models/Message.js";
 import User from "../models/User.js";
 import cloudinary from "../lib/cloudinary.js";
 
-// ✅ Helper (optional): Translate message using Go backend — kept for reuse
+// ✅ Translate helper (optional for reuse)
 const translateMessage = async (text, sourceLang, targetLang) => {
   if (!text || sourceLang === targetLang) return text;
-
   try {
-    const res = await axios.post('http://localhost:8080/translate', {
+    const res = await axios.post("http://localhost:8080/translate", {
       q: text,
       source: sourceLang,
       target: targetLang,
-      format: 'text',
+      format: "text",
     });
     return res.data.translatedText;
   } catch (err) {
@@ -21,7 +20,21 @@ const translateMessage = async (text, sourceLang, targetLang) => {
   }
 };
 
-// ✅ Controller: Send message (store original text only)
+// ✅ Get list of chat friends (used in ChatContext)
+const getChatUsers = async (req, res) => {
+  try {
+    const currentUser = await User.findById(req.user._id).populate("friends", "-password");
+    if (!currentUser) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    res.json({ users: currentUser.friends, unseenMessages: {} });
+  } catch (err) {
+    console.error("Get Chat Users Error:", err.message);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// ✅ Send message (text and optional image)
 const sendMessage = async (req, res) => {
   try {
     const { text, image } = req.body;
@@ -38,11 +51,10 @@ const sendMessage = async (req, res) => {
       imageUrl = upload.secure_url;
     }
 
-    // ✅ Save original message only
     const newMessage = await Message.create({
       senderId,
       receiverId,
-      text, // do not translate
+      text,
       image: imageUrl,
     });
 
@@ -53,7 +65,7 @@ const sendMessage = async (req, res) => {
   }
 };
 
-// ✅ Controller: Get messages between users
+// ✅ Get all messages between two users
 const getMessages = async (req, res) => {
   try {
     const selectedUserId = req.params.id;
@@ -78,7 +90,7 @@ const getMessages = async (req, res) => {
   }
 };
 
-// ✅ Controller: Mark a single message as seen
+// ✅ Mark a single message as seen
 const markMessageAsSeen = async (req, res) => {
   try {
     const { id } = req.params;
@@ -90,11 +102,10 @@ const markMessageAsSeen = async (req, res) => {
   }
 };
 
-// ✅ Controller: Get all users except self, with unseen message count
+// ✅ Get all users except self with unseen message counts (sidebar list)
 const getUsersForSidebar = async (req, res) => {
   try {
     const userId = req.user._id;
-
     const users = await User.find({ _id: { $ne: userId } }).select("-password");
 
     const unseenMessages = {};
@@ -116,8 +127,9 @@ const getUsersForSidebar = async (req, res) => {
   }
 };
 
-// ✅ Export all controllers
+// ✅ Exports
 export {
+  getChatUsers,
   sendMessage,
   getMessages,
   markMessageAsSeen,

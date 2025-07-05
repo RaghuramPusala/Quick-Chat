@@ -5,11 +5,13 @@ import {
   getUsersForSidebar,
   markMessageAsSeen,
   sendMessage,
+  getChatUsers,
 } from "../controllers/messageController.js";
 
 const router = express.Router();
 
-router.get("/users", protectRoute, getUsersForSidebar);
+router.get("/", protectRoute, getUsersForSidebar);
+router.get("/users", protectRoute, getChatUsers);
 router.get("/:id", protectRoute, getMessages);
 router.put("/mark/:id", protectRoute, markMessageAsSeen);
 router.post("/send/:id", protectRoute, sendMessage);
