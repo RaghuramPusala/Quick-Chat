@@ -1,4 +1,5 @@
 import User from "../models/User.js";
+import { getUserSocket } from "../utils/socketManager.js";
 
 // ✅ Send friend request
 export const sendFriendRequest = async (req, res) => {
@@ -36,7 +37,7 @@ export const sendFriendRequest = async (req, res) => {
   }
 };
 
-// ✅ Accept friend request
+// ✅ Accept friend request + EMIT SOCKET
 export const acceptFriendRequest = async (req, res) => {
   try {
     const toUserId = req.user._id;
@@ -53,14 +54,27 @@ export const acceptFriendRequest = async (req, res) => {
       return res.status(400).json({ message: "No request from this user" });
     }
 
+    // Remove request
     receiver.friendRequests = receiver.friendRequests.filter(id => id.toString() !== fromUserId);
     sender.sentRequests = sender.sentRequests.filter(id => id.toString() !== toUserId.toString());
 
+    // Add to friends list
     receiver.friends.push(fromUserId);
     sender.friends.push(toUserId);
 
     await receiver.save();
     await sender.save();
+
+    // 🚀 Emit real-time event to both users
+    const senderSocket = getUserSocket(fromUserId);
+    const receiverSocket = getUserSocket(toUserId);
+
+    if (senderSocket) {
+      senderSocket.emit("friend-accepted", { userId: toUserId });
+    }
+    if (receiverSocket) {
+      receiverSocket.emit("friend-accepted", { userId: fromUserId });
+    }
 
     res.json({ success: true, message: "Friend request accepted" });
   } catch (err) {
