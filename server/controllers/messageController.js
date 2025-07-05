@@ -3,7 +3,7 @@ import Message from "../models/Message.js";
 import User from "../models/User.js";
 import cloudinary from "../lib/cloudinary.js";
 
-// ✅ Translate helper (optional for reuse)
+// ✅ Translate helper (used when language differs)
 const translateMessage = async (text, sourceLang, targetLang) => {
   if (!text || sourceLang === targetLang) return text;
   try {
@@ -20,32 +20,45 @@ const translateMessage = async (text, sourceLang, targetLang) => {
   }
 };
 
-// ✅ Get list of chat friends (used in ChatContext)
+// ✅ 1. Get mutual friends with unseen message count
 const getChatUsers = async (req, res) => {
   try {
     const currentUser = await User.findById(req.user._id).populate("friends", "-password");
     if (!currentUser) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
-    res.json({ users: currentUser.friends, unseenMessages: {} });
+
+    const unseenMessages = {};
+    await Promise.all(
+      currentUser.friends.map(async (friend) => {
+        const unseen = await Message.countDocuments({
+          senderId: friend._id,
+          receiverId: currentUser._id,
+          seen: false,
+        });
+        if (unseen > 0) unseenMessages[friend._id] = unseen;
+      })
+    );
+
+    res.json({ users: currentUser.friends, unseenMessages });
   } catch (err) {
     console.error("Get Chat Users Error:", err.message);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
-// ✅ Send message (text and optional image)
+// ✅ 2. Send message (optionally with image)
 const sendMessage = async (req, res) => {
   try {
     const { text, image } = req.body;
     const receiverId = req.params.id;
     const senderId = req.user._id;
 
-    if (!receiverId || !senderId || receiverId === senderId.toString()) {
+    if (!receiverId || receiverId === senderId.toString()) {
       return res.status(400).json({ success: false, message: "Invalid user IDs" });
     }
 
-    let imageUrl;
+    let imageUrl = null;
     if (image) {
       const upload = await cloudinary.uploader.upload(image);
       imageUrl = upload.secure_url;
@@ -59,13 +72,13 @@ const sendMessage = async (req, res) => {
     });
 
     res.json({ success: true, newMessage });
-  } catch (error) {
-    console.log("Send Message Error:", error.message);
-    res.status(500).json({ success: false, message: error.message });
+  } catch (err) {
+    console.error("Send Message Error:", err.message);
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// ✅ Get all messages between two users
+// ✅ 3. Get all messages between two users
 const getMessages = async (req, res) => {
   try {
     const selectedUserId = req.params.id;
@@ -84,54 +97,28 @@ const getMessages = async (req, res) => {
     );
 
     res.json({ success: true, messages });
-  } catch (error) {
-    console.log("Get Messages Error:", error.message);
-    res.status(500).json({ success: false, message: error.message });
+  } catch (err) {
+    console.error("Get Messages Error:", err.message);
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// ✅ Mark a single message as seen
+// ✅ 4. Mark a single message as seen (if needed)
 const markMessageAsSeen = async (req, res) => {
   try {
     const { id } = req.params;
     await Message.findByIdAndUpdate(id, { seen: true });
     res.json({ success: true });
-  } catch (error) {
-    console.log("Mark Seen Error:", error.message);
-    res.status(500).json({ success: false, message: error.message });
+  } catch (err) {
+    console.error("Mark Seen Error:", err.message);
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// ✅ Get all users except self with unseen message counts (sidebar list)
-const getUsersForSidebar = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const users = await User.find({ _id: { $ne: userId } }).select("-password");
-
-    const unseenMessages = {};
-    await Promise.all(
-      users.map(async (user) => {
-        const unseen = await Message.countDocuments({
-          senderId: user._id,
-          receiverId: userId,
-          seen: false,
-        });
-        if (unseen > 0) unseenMessages[user._id] = unseen;
-      })
-    );
-
-    res.json({ success: true, users, unseenMessages });
-  } catch (error) {
-    console.log("Get Users Error:", error.message);
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-// ✅ Exports
 export {
   getChatUsers,
   sendMessage,
   getMessages,
   markMessageAsSeen,
-  getUsersForSidebar,
+  translateMessage,
 };
