@@ -41,6 +41,9 @@ const getChatUsers = async (req, res) => {
       })
     );
 
+    // ✅ Debug log: list of friends' full names
+    console.log("📦 Returning friends:", currentUser.friends.map(f => f.fullName));
+
     res.json({ success: true, users: currentUser.friends, unseenMessages });
   } catch (err) {
     console.error("Get Chat Users Error:", err.message);
