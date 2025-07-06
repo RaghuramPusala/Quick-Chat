@@ -37,35 +37,24 @@ export const sendFriendRequest = async (req, res) => {
   }
 };
 
-// ✅ Accept friend request + emit to both users
+// ✅ Accept friend request (with atomic DB ops)
 export const acceptFriendRequest = async (req, res) => {
   try {
     const toUserId = req.user._id;
     const { fromUserId } = req.body;
 
-    const receiver = await User.findById(toUserId);
-    const sender = await User.findById(fromUserId);
+    // ✅ Atomic updates to both users
+    await User.findByIdAndUpdate(toUserId, {
+      $addToSet: { friends: fromUserId },
+      $pull: { friendRequests: fromUserId },
+    });
 
-    if (!receiver || !sender) {
-      return res.status(404).json({ message: "User not found" });
-    }
+    await User.findByIdAndUpdate(fromUserId, {
+      $addToSet: { friends: toUserId },
+      $pull: { sentRequests: toUserId },
+    });
 
-    if (!receiver.friendRequests.includes(fromUserId)) {
-      return res.status(400).json({ message: "No request from this user" });
-    }
-
-    // Remove request
-    receiver.friendRequests = receiver.friendRequests.filter(id => id.toString() !== fromUserId);
-    sender.sentRequests = sender.sentRequests.filter(id => id.toString() !== toUserId.toString());
-
-    // Add to friends
-    receiver.friends.push(fromUserId);
-    sender.friends.push(toUserId);
-
-    await receiver.save();
-    await sender.save();
-
-    // 🔥 Emit real-time updates to both users
+    // 🔁 Emit socket updates to both users
     const senderSocketId = userSocketMap[fromUserId];
     const receiverSocketId = userSocketMap[toUserId];
 
@@ -83,7 +72,7 @@ export const acceptFriendRequest = async (req, res) => {
   }
 };
 
-// ✅ Cancel or Decline friend request
+// ✅ Cancel or decline friend request
 export const cancelFriendRequest = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -111,7 +100,7 @@ export const cancelFriendRequest = async (req, res) => {
   }
 };
 
-// ✅ Get list of friends
+// ✅ Get list of all friends
 export const getFriends = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).populate("friends", "username fullName profilePic");
@@ -121,7 +110,7 @@ export const getFriends = async (req, res) => {
   }
 };
 
-// ✅ Get pending requests (received and sent)
+// ✅ Get pending (received + sent) friend requests
 export const getPendingRequests = async (req, res) => {
   try {
     const user = await User.findById(req.user._id)

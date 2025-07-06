@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.helonative.app-mergeDebugResources-40:/values-ldrtl-v17/values-ldrtl-v17.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\pusal\\.gradle\\caches\\8.14.1\\transforms\\624ca5101ab18514f12ce3623bb22e9f\\transformed\\material-1.12.0\\res\\values-ldrtl-v17\\values-ldrtl-v17.xml",
+                    "from": {
+                        "startLines": "2,3",
+                        "startColumns": "4,4",
+                        "startOffsets": "55,191",
+                        "endColumns": "135,140",
+                        "endOffsets": "186,327"
+                    }
+                }
+            ]
+        }
+    ]
+}

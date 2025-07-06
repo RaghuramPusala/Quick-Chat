@@ -1,0 +1,20 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.helonative.app-mergeDebugResources-40:/values-watch-v20/values-watch-v20.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\pusal\\.gradle\\caches\\8.14.1\\transforms\\a10d6bace855d81fbf7e181d5806f81b\\transformed\\appcompat-1.7.0\\res\\values-watch-v20\\values-watch-v20.xml",
+                    "from": {
+                        "startLines": "2,5,8",
+                        "startColumns": "4,4,4",
+                        "startOffsets": "55,214,385",
+                        "endLines": "4,7,10",
+                        "endColumns": "12,12,12",
+                        "endOffsets": "209,380,553"
+                    }
+                }
+            ]
+        }
+    ]
+}
