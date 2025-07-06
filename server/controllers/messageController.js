@@ -1,9 +1,10 @@
+// controllers/messageController.js
 import axios from "axios";
 import Message from "../models/Message.js";
 import User from "../models/User.js";
 import cloudinary from "../lib/cloudinary.js";
 
-// ✅ Translate helper (used when language differs)
+// ✅ Helper: Translate message if needed
 const translateMessage = async (text, sourceLang, targetLang) => {
   if (!text || sourceLang === targetLang) return text;
   try {
@@ -20,7 +21,7 @@ const translateMessage = async (text, sourceLang, targetLang) => {
   }
 };
 
-// ✅ 1. Get mutual friends with unseen message count
+// ✅ 1. Get friends + unseen message counts
 const getChatUsers = async (req, res) => {
   try {
     const currentUser = await User.findById(req.user._id).populate("friends", "-password");
@@ -40,14 +41,14 @@ const getChatUsers = async (req, res) => {
       })
     );
 
-    res.json({ users: currentUser.friends, unseenMessages });
+    res.json({ success: true, users: currentUser.friends, unseenMessages });
   } catch (err) {
     console.error("Get Chat Users Error:", err.message);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
-// ✅ 2. Send message (optionally with image)
+// ✅ 2. Send message (text or image)
 const sendMessage = async (req, res) => {
   try {
     const { text, image } = req.body;
@@ -103,7 +104,7 @@ const getMessages = async (req, res) => {
   }
 };
 
-// ✅ 4. Mark a single message as seen (if needed)
+// ✅ 4. Mark a message as seen
 const markMessageAsSeen = async (req, res) => {
   try {
     const { id } = req.params;
