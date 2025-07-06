@@ -24,12 +24,15 @@ const translateMessage = async (text, sourceLang, targetLang) => {
 // ✅ 1. Get friends + unseen message counts
 const getChatUsers = async (req, res) => {
   try {
-    const currentUser = await User.findById(req.user._id).populate("friends", "-password");
+    const currentUser = await User.findById(req.user._id)
+      .populate("friends", "-password");
+
     if (!currentUser) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
     const unseenMessages = {};
+
     await Promise.all(
       currentUser.friends.map(async (friend) => {
         const unseen = await Message.countDocuments({
@@ -41,15 +44,21 @@ const getChatUsers = async (req, res) => {
       })
     );
 
-    // ✅ Debug log: list of friends' full names
-    console.log("📦 Returning friends:", currentUser.friends.map(f => f.fullName));
+    // ✅ Confirm what you're returning (should include usernames/full names)
+    console.log("📦 Returning friends:", currentUser.friends.map(f => `${f.username || f.fullName} (${f._id})`));
 
-    res.json({ success: true, users: currentUser.friends, unseenMessages });
+    return res.json({
+      success: true,
+      users: currentUser.friends,
+      unseenMessages,
+    });
+
   } catch (err) {
     console.error("Get Chat Users Error:", err.message);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
 
 // ✅ 2. Send message (text or image)
 const sendMessage = async (req, res) => {
