@@ -1,3 +1,4 @@
+// /server.js or /index.js
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
@@ -15,9 +16,9 @@ const server = http.createServer(app);
 
 // ✅ Allowed origins for CORS
 const allowedOrigins = [
-  "https://quickchat-eight.vercel.app", // Vercel domain
+  "https://quickchat-eight.vercel.app",
   "http://localhost:5173",
-  "http://localhost:8081", // Dev local
+  "http://localhost:8081",
 ];
 
 // ✅ CORS Middleware
@@ -40,7 +41,10 @@ export const io = new Server(server, {
   },
 });
 
-// ✅ Exported userSocketMap for external use (e.g., controllers)
+// ✅ Set io in app (for controller access)
+app.set("io", io);
+
+// ✅ Global socket map
 export const userSocketMap = {}; // userId: socket.id
 
 io.on("connection", (socket) => {
@@ -49,11 +53,11 @@ io.on("connection", (socket) => {
 
   if (userId) {
     userSocketMap[userId] = socket.id;
-    socket.join(userId); // ✅ Join per-user room
+    socket.join(userId); // per-user room
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
   }
 
-  // ✅ Message delivery
+  // ✅ Handle new message
   socket.on("send-message", (msg) => {
     const receiverSocketId = userSocketMap[msg.receiverId];
     if (receiverSocketId) {
@@ -61,7 +65,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  // ✅ Seen status
+  // ✅ Seen update
   socket.on("markSeen", ({ from, to }) => {
     io.to(from).emit("seenUpdate", { userId: to });
   });
@@ -73,7 +77,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  // ✅ Cleanup on disconnect
+  // ✅ Disconnect cleanup
   socket.on("disconnect", () => {
     delete userSocketMap[userId];
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
@@ -87,7 +91,7 @@ app.use("/api/message", messageRoutes);
 app.use("/api/translate", translateRoute);
 app.use("/api/friends", friendRoutes);
 
-// ✅ Server start
+// ✅ Start server
 const start = async () => {
   await connectDB();
   const PORT = process.env.PORT || 5000;

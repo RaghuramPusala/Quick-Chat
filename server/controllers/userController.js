@@ -1,3 +1,4 @@
+// /controllers/userController.js
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import { generateToken } from "../lib/utils.js";
@@ -23,19 +24,9 @@ export const signup = async (req, res) => {
     }
 
     const languageToCountry = {
-      en: "US",
-      hi: "IN",
-      fr: "FR",
-      es: "ES",
-      zh: "CN",
-      ja: "JP",
-      de: "DE",
-      ru: "RU",
-      ko: "KR",
-      pt: "BR",
-      it: "IT",
+      en: "US", hi: "IN", fr: "FR", es: "ES", zh: "CN",
+      ja: "JP", de: "DE", ru: "RU", ko: "KR", pt: "BR", it: "IT",
     };
-
     const country = languageToCountry[language] || "US";
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -98,35 +89,39 @@ export const checkAuth = (req, res) => {
   res.json({ success: true, user: req.user });
 };
 
-// ✅ Update Profile
+// ✅ Update Profile (with real-time socket emit)
 export const updateProfile = async (req, res) => {
   try {
-    const { profilePic, bio, fullName } = req.body;
-    const userId = req.user._id;
-    let updatedUser;
+    const { fullName, bio, profilePic } = req.body;
+    const user = await User.findById(req.user._id);
 
-    if (!profilePic) {
-      updatedUser = await User.findByIdAndUpdate(
-        userId,
-        { bio, fullName },
-        { new: true }
-      );
-    } else {
+    if (fullName) user.fullName = fullName;
+    if (bio) user.bio = bio;
+
+    if (profilePic) {
       const upload = await cloudinary.uploader.upload(profilePic);
-      updatedUser = await User.findByIdAndUpdate(
-        userId,
-        {
-          profilePic: upload.secure_url,
-          bio,
-          fullName,
-        },
-        { new: true }
-      );
+      user.profilePic = upload.secure_url;
     }
 
-    res.json({ success: true, user: updatedUser });
-  } catch (error) {
-    console.log(error.message);
+    await user.save();
+
+    // ✅ Emit real-time update to friends & followers
+    const io = req.app.get("io");
+    const userIdsToNotify = [...user.friends, ...user.followers];
+
+    userIdsToNotify.forEach((id) => {
+      const socketId = global.userSocketMap[id];
+      if (socketId) {
+        io.to(socketId).emit("profile-pic-updated", {
+          userId: user._id,
+          profilePic: user.profilePic,
+        });
+      }
+    });
+
+    res.status(200).json({ success: true, user });
+  } catch (err) {
+    console.log(err.message);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
@@ -142,7 +137,7 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
-// ✅ Set Preferred Language
+// ✅ Set Preferred Language + Country
 export const setLanguage = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -153,19 +148,9 @@ export const setLanguage = async (req, res) => {
     }
 
     const languageToCountry = {
-      en: "US",
-      hi: "IN",
-      fr: "FR",
-      es: "ES",
-      zh: "CN",
-      ja: "JP",
-      de: "DE",
-      ru: "RU",
-      ko: "KR",
-      pt: "BR",
-      it: "IT",
+      en: "US", hi: "IN", fr: "FR", es: "ES", zh: "CN",
+      ja: "JP", de: "DE", ru: "RU", ko: "KR", pt: "BR", it: "IT",
     };
-
     const country = languageToCountry[language] || "US";
 
     const user = await User.findByIdAndUpdate(
@@ -176,6 +161,7 @@ export const setLanguage = async (req, res) => {
 
     res.json({ success: true, user });
   } catch (error) {
+    console.log(error.message);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
