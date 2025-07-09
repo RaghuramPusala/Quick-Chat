@@ -1,4 +1,3 @@
-// /server.js or /index.js
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
@@ -52,6 +51,7 @@ io.on("connection", (socket) => {
   console.log("✅ User connected:", userId);
 
   if (userId) {
+    console.log("📌 Setting userSocketMap:", userId, socket.id);
     userSocketMap[userId] = socket.id;
     socket.join(userId); // per-user room
     io.emit("getOnlineUsers", Object.keys(userSocketMap));

@@ -1,4 +1,3 @@
-// /controllers/userController.js
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import { generateToken } from "../lib/utils.js";
@@ -101,6 +100,7 @@ export const updateProfile = async (req, res) => {
     if (profilePic) {
       const upload = await cloudinary.uploader.upload(profilePic);
       user.profilePic = upload.secure_url;
+      console.log("✅ Profile uploaded:", user.profilePic);
     }
 
     await user.save();
@@ -108,6 +108,11 @@ export const updateProfile = async (req, res) => {
     // ✅ Emit real-time update to friends & followers
     const io = req.app.get("io");
     const userIdsToNotify = [...user.friends, ...user.followers];
+
+    // 🔎 Debug emit targets
+    console.log("friends:", user.friends);
+    console.log("followers:", user.followers);
+    console.log("🔁 Emitting profile-pic-updated to:", userIdsToNotify);
 
     userIdsToNotify.forEach((id) => {
       const socketId = global.userSocketMap[id];
