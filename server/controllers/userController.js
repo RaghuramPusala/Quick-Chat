@@ -49,7 +49,7 @@ export const signup = async (req, res) => {
       message: "Account created successfully",
     });
   } catch (error) {
-    console.log(error.message);
+    console.log("❌ Signup Error:", error.message);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
@@ -78,7 +78,7 @@ export const login = async (req, res) => {
       message: "Login successful",
     });
   } catch (error) {
-    console.log(error.message);
+    console.log("❌ Login Error:", error.message);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
@@ -94,13 +94,25 @@ export const updateProfile = async (req, res) => {
     const { fullName, bio, profilePic } = req.body;
     const user = await User.findById(req.user._id);
 
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
     if (fullName) user.fullName = fullName;
     if (bio) user.bio = bio;
 
-    if (profilePic) {
-      const upload = await cloudinary.uploader.upload(profilePic);
-      user.profilePic = upload.secure_url;
-      console.log("✅ Profile uploaded:", user.profilePic);
+    if (profilePic && profilePic.startsWith("data:")) {
+      try {
+        const upload = await cloudinary.uploader.upload(profilePic, {
+          folder: "halo/profilePics",
+          resource_type: "image",
+        });
+        user.profilePic = upload.secure_url;
+        console.log("✅ Profile uploaded to Cloudinary:", user.profilePic);
+      } catch (cloudErr) {
+        console.error("❌ Cloudinary upload failed:", cloudErr.message);
+        return res.status(500).json({ success: false, message: "Cloudinary error" });
+      }
     }
 
     await user.save();
@@ -123,7 +135,7 @@ export const updateProfile = async (req, res) => {
 
     res.status(200).json({ success: true, user });
   } catch (err) {
-    console.log(err.message);
+    console.log("❌ UpdateProfile Error:", err.message);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
@@ -134,7 +146,7 @@ export const getAllUsers = async (req, res) => {
     const users = await User.find({ _id: { $ne: req.user._id } }).select("-password");
     res.json({ success: true, users });
   } catch (error) {
-    console.log(error.message);
+    console.log("❌ GetAllUsers Error:", error.message);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
@@ -163,7 +175,7 @@ export const setLanguage = async (req, res) => {
 
     res.json({ success: true, user });
   } catch (error) {
-    console.log(error.message);
+    console.log("❌ setLanguage Error:", error.message);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
