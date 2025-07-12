@@ -88,59 +88,57 @@ export const checkAuth = (req, res) => {
   res.json({ success: true, user: req.user });
 };
 
-// ✅ Update Profile with profilePic upload and socket emit
+// ✅ Update Profile (safe partial update with Cloudinary + real-time)
 export const updateProfile = async (req, res) => {
   try {
     const { fullName, bio, profilePic } = req.body;
-    const user = await User.findById(req.user._id);
+    const updates = {};
 
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
-
-    if (fullName) user.fullName = fullName;
-    if (bio) user.bio = bio;
+    if (fullName) updates.fullName = fullName;
+    if (bio) updates.bio = bio;
 
     if (profilePic && profilePic.startsWith("data:")) {
       try {
         console.log("⬆️ Uploading profilePic with base64 size:", profilePic.length);
-
         const upload = await cloudinary.uploader.upload(profilePic, {
           folder: "halo/profilePics",
           resource_type: "image",
         });
-
-        user.profilePic = upload.secure_url;
-        console.log("✅ Profile uploaded to Cloudinary:", user.profilePic);
+        updates.profilePic = upload.secure_url;
+        console.log("✅ Profile uploaded to Cloudinary:", updates.profilePic);
       } catch (cloudErr) {
         console.error("❌ Cloudinary upload failed:", cloudErr.message);
-        return res.status(500).json({ success: false, message: cloudErr.message });
+        return res.status(500).json({ success: false, message: "Cloudinary error" });
       }
     }
 
-    await user.save();
-
-    // 🔁 Emit real-time profile pic update
-    const io = req.app.get("io");
-    const userIdsToNotify = [...(user.friends || []), ...(user.followers || [])].map(id =>
-      id.toString()
+    // ✅ Update user safely with only modified fields
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      { $set: updates },
+      { new: true, runValidators: true }
     );
 
-    console.log("🔁 Emitting profile-pic-updated to:", userIdsToNotify);
+    // ✅ Emit profile update to friends and followers
+    const io = req.app.get("io");
+    const notifyIds = [...(updatedUser.friends || []), ...(updatedUser.followers || [])].map(id => id.toString());
 
-    userIdsToNotify.forEach((id) => {
+    console.log("📣 Emitting profile-pic-updated to:", notifyIds);
+
+    notifyIds.forEach(id => {
       const socketId = global.userSocketMap?.[id];
       if (socketId) {
         io.to(socketId).emit("profile-pic-updated", {
-          userId: user._id.toString(),
-          profilePic: user.profilePic,
+          userId: updatedUser._id.toString(),
+          profilePic: updatedUser.profilePic,
         });
       }
     });
 
-    res.status(200).json({ success: true, user });
+    res.status(200).json({ success: true, user: updatedUser });
+
   } catch (err) {
-    console.log("❌ UpdateProfile Error:", err.message);
+    console.error("❌ UpdateProfile Error:", err.message);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
