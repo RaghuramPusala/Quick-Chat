@@ -119,12 +119,14 @@ export const updateProfile = async (req, res) => {
 
     // ✅ Emit real-time update to friends & followers
     const io = req.app.get("io");
-    const userIdsToNotify = [...user.friends, ...user.followers].map(id => id.toString());
+    const userIdsToNotify = [...(user.friends || []), ...(user.followers || [])].map(id =>
+      id.toString()
+    );
 
     console.log("🔁 Emitting profile-pic-updated to:", userIdsToNotify);
 
     userIdsToNotify.forEach((id) => {
-      const socketId = global.userSocketMap[id];
+      const socketId = global.userSocketMap?.[id];
       if (socketId) {
         io.to(socketId).emit("profile-pic-updated", {
           userId: user._id.toString(),
