@@ -88,7 +88,7 @@ export const checkAuth = (req, res) => {
   res.json({ success: true, user: req.user });
 };
 
-// ✅ Update Profile (with real-time socket emit to friends/followers)
+// ✅ Update Profile with profilePic upload and socket emit
 export const updateProfile = async (req, res) => {
   try {
     const { fullName, bio, profilePic } = req.body;
@@ -103,21 +103,24 @@ export const updateProfile = async (req, res) => {
 
     if (profilePic && profilePic.startsWith("data:")) {
       try {
+        console.log("⬆️ Uploading profilePic with base64 size:", profilePic.length);
+
         const upload = await cloudinary.uploader.upload(profilePic, {
           folder: "halo/profilePics",
           resource_type: "image",
         });
+
         user.profilePic = upload.secure_url;
         console.log("✅ Profile uploaded to Cloudinary:", user.profilePic);
       } catch (cloudErr) {
         console.error("❌ Cloudinary upload failed:", cloudErr.message);
-        return res.status(500).json({ success: false, message: "Cloudinary error" });
+        return res.status(500).json({ success: false, message: cloudErr.message });
       }
     }
 
     await user.save();
 
-    // ✅ Emit real-time update to friends & followers
+    // 🔁 Emit real-time profile pic update
     const io = req.app.get("io");
     const userIdsToNotify = [...(user.friends || []), ...(user.followers || [])].map(id =>
       id.toString()
@@ -153,7 +156,7 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
-// ✅ Set Preferred Language + Country
+// ✅ Set Language
 export const setLanguage = async (req, res) => {
   try {
     const userId = req.user._id;
