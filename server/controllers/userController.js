@@ -88,7 +88,7 @@ export const checkAuth = (req, res) => {
   res.json({ success: true, user: req.user });
 };
 
-// ✅ Update Profile (with real-time socket emit)
+// ✅ Update Profile (with real-time socket emit to friends/followers)
 export const updateProfile = async (req, res) => {
   try {
     const { fullName, bio, profilePic } = req.body;
@@ -107,18 +107,15 @@ export const updateProfile = async (req, res) => {
 
     // ✅ Emit real-time update to friends & followers
     const io = req.app.get("io");
-    const userIdsToNotify = [...user.friends, ...user.followers];
+    const userIdsToNotify = [...user.friends, ...user.followers].map(id => id.toString());
 
-    // 🔎 Debug emit targets
-    console.log("friends:", user.friends);
-    console.log("followers:", user.followers);
     console.log("🔁 Emitting profile-pic-updated to:", userIdsToNotify);
 
     userIdsToNotify.forEach((id) => {
       const socketId = global.userSocketMap[id];
       if (socketId) {
         io.to(socketId).emit("profile-pic-updated", {
-          userId: user._id,
+          userId: user._id.toString(),
           profilePic: user.profilePic,
         });
       }
