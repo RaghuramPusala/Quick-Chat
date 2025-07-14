@@ -54,7 +54,7 @@ const getChatUsers = async (req, res) => {
   }
 };
 
-// ✅ 2. Send message (with socket.io real-time)
+
 const sendMessage = async (req, res) => {
   try {
     const { text, image } = req.body;
@@ -78,19 +78,32 @@ const sendMessage = async (req, res) => {
       image: imageUrl,
     });
 
-    // ✅ Emit message to receiver and sender using socket.io
+    // ✅ Emit to both sender and receiver
     const io = req.app.get("io");
-    const userSocketMap = global.userSocketMap; // ✅ Access from global scope
+    const userSocketMap = global.userSocketMap;
 
     const receiverSocketId = userSocketMap?.[receiverId];
     const senderSocketId = userSocketMap?.[senderId];
 
+    console.log("📨 SENDING MESSAGE:");
+    console.log("senderId:", senderId);
+    console.log("receiverId:", receiverId);
+    console.log("userSocketMap:", userSocketMap);
+    console.log("receiverSocketId:", receiverSocketId);
+    console.log("senderSocketId:", senderSocketId);
+
     if (receiverSocketId) {
+      console.log("📤 Emitting to receiver...");
       io.to(receiverSocketId).emit("newMessage", newMessage);
+    } else {
+      console.warn("❌ Receiver is not connected via socket.");
     }
 
     if (senderSocketId) {
-      io.to(senderSocketId).emit("newMessage", newMessage); // ✅ Always emit back to sender
+      console.log("📤 Emitting to sender...");
+      io.to(senderSocketId).emit("newMessage", newMessage);
+    } else {
+      console.warn("❌ Sender is not connected via socket.");
     }
 
     res.json({ success: true, newMessage });
