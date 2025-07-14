@@ -45,20 +45,22 @@ app.set("io", io);
 
 // ✅ Global socket map
 export const userSocketMap = {}; // userId: socket.id
+global.userSocketMap = userSocketMap; // ✅ Required for use in messageController
 
+// ✅ Socket.IO Connection
 io.on("connection", (socket) => {
   const userId = socket.handshake.query.userId;
   console.log("✅ User connected:", userId);
 
   if (userId) {
-    console.log("📌 Setting userSocketMap:", userId, socket.id);
     userSocketMap[userId] = socket.id;
-    socket.join(userId); // per-user room
+    socket.join(userId);
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
   }
 
-  // ✅ Handle new message
+  // ✅ Handle new message (React or React Native emits this)
   socket.on("send-message", (msg) => {
+    console.log("📨 send-message received from", msg?.senderId, "to", msg?.receiverId);
     const receiverSocketId = userSocketMap[msg.receiverId];
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("newMessage", msg);
@@ -84,7 +86,7 @@ io.on("connection", (socket) => {
   });
 });
 
-// ✅ Routes
+// ✅ API Routes
 app.use("/api/status", (req, res) => res.send("Server is live"));
 app.use("/api/auth", userRouter);
 app.use("/api/message", messageRoutes);

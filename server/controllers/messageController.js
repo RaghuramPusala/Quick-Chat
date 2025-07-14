@@ -78,19 +78,19 @@ const sendMessage = async (req, res) => {
       image: imageUrl,
     });
 
-    // ✅ Emit message to receiver using socket.io
+    // ✅ Emit message to receiver and sender using socket.io
     const io = req.app.get("io");
-    const { userSocketMap } = await import("../server.js"); // adjust path if needed
+    const userSocketMap = global.userSocketMap; // ✅ Access from global scope
 
-    const receiverSocketId = userSocketMap[receiverId];
-    const senderSocketId = userSocketMap[senderId];
+    const receiverSocketId = userSocketMap?.[receiverId];
+    const senderSocketId = userSocketMap?.[senderId];
 
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("newMessage", newMessage);
     }
 
-    if (senderSocketId && receiverSocketId !== senderSocketId) {
-      io.to(senderSocketId).emit("newMessage", newMessage); // update sender too
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("newMessage", newMessage); // ✅ Always emit back to sender
     }
 
     res.json({ success: true, newMessage });
@@ -125,7 +125,7 @@ const getMessages = async (req, res) => {
   }
 };
 
-// ✅ 4. Mark a message as seen
+// ✅ 4. Mark a message as seen (by ID)
 const markMessageAsSeen = async (req, res) => {
   try {
     const { id } = req.params;
