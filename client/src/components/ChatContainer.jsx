@@ -136,11 +136,12 @@ const ChatContainer = () => {
       {/* Header - always visible */}
       <div className="shrink-0 flex items-center gap-3 py-3 px-4 border-b border-gray-200 bg-white z-10">
         <div className="relative">
-          <img
-            src={selectedUser.profilePic || assets.avatar_icon}
-            alt=""
-            className="w-9 rounded-full"
-          />
+         <img
+  src={selectedUser.profilePic || assets.avatar_icon}
+  alt=""
+  className="w-10 h-10 rounded-full object-cover object-center"
+/>
+
           {onlineUsers.includes(selectedUser._id) && (
             <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
           )}
